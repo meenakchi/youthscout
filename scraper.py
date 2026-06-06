@@ -1,8 +1,8 @@
 """
-Opportunity Finder - Main Scraper
+Opportunity Finder — Scraper (No AI API Required)
 Scrapes hackathons, leadership camps, youth programs, and similar opportunities.
 
-Install deps: pip install requests beautifulsoup4 playwright anthropic schedule
+Install deps: pip install requests beautifulsoup4
 Then run: python scraper.py
 """
 
@@ -10,302 +10,736 @@ import json
 import time
 import hashlib
 import sqlite3
+import re
 import os
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
 
 # --- CONFIG ---
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "YOUR_API_KEY_HERE")
 DB_PATH = "data/opportunities.db"
-SEARCH_KEYWORDS = [
-    "hackathon 2025 singapore students applications open",
-    "youth leadership camp 2025 singapore",
-    "leadership program students 2025 apply",
-    "YMCA youth program 2025",
-    "student competition 2025 singapore",
-    "fellowship program undergraduates 2025",
-    "bootcamp students free 2025 singapore",
-    "internship program 2025 students apply",
+OUTPUT_JSON = "data/opportunities.json"
+
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    )
+}
+
+# Keywords used to detect category from page text
+CATEGORY_KEYWORDS = {
+    "Hackathon":     ["hackathon", "hack ", "hacking", "hack fest", "hackers"],
+    "Competition":   ["competition", "challenge", "contest", "award", "pitch", "compete"],
+    "Fellowship":    ["fellowship", "scholar", "overseas college", "exchange program"],
+    "Internship":    ["internship", "intern ", "apprenticeship", "attachment"],
+    "Bootcamp":      ["bootcamp", "boot camp", "training program", "accelerator", "summer of code"],
+    "Leadership":    ["leadership", "leader", "mentorship", "community program", "volunteer"],
+    "Youth Program": ["youth", "young ", "student program", "undergraduate program"],
+}
+
+DEADLINE_PATTERNS = [
+    r"\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|"
+    r"jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+    r"[\s,\-]+\d{1,2}[\s,\-]+20\d{2}\b",
+    r"\b\d{1,2}[\s/\-]+\d{1,2}[\s/\-]+20\d{2}\b",
+    r"\b20\d{2}[\s/\-]+\d{1,2}[\s/\-]+\d{1,2}\b",
 ]
 
-# Add your own target sites here
-TARGET_SITES = [
-    {"name": "Devpost", "url": "https://devpost.com/hackathons?challenge_type=all&sort_by=Deadline"},
-    {"name": "Major League Hacking", "url": "https://mlh.io/seasons/2025/events"},
-    {"name": "Singapore Youth Council", "url": "https://www.nyc.gov.sg/en/opportunities"},
-]
 
+# ─── DATABASE ───────────────────────────────────────────────────────────────
 
-# --- DATABASE ---
-def init_db():
+def init_db() -> sqlite3.Connection:
     Path("data").mkdir(exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS opportunities (
-            id TEXT PRIMARY KEY,
-            title TEXT,
-            source TEXT,
-            url TEXT,
+            id          TEXT PRIMARY KEY,
+            title       TEXT,
+            source      TEXT,
+            url         TEXT UNIQUE,
             description TEXT,
-            deadline TEXT,
+            deadline    TEXT,
             eligibility TEXT,
-            category TEXT,
-            location TEXT,
-            date_found TEXT,
-            raw_text TEXT
+            category    TEXT,
+            location    TEXT,
+            date_found  TEXT
         )
     """)
     conn.commit()
     return conn
 
 
-def save_opportunity(conn, opp: dict):
-    uid = hashlib.md5(opp["url"].encode()).hexdigest()
+def save(conn: sqlite3.Connection, opp: dict) -> bool:
+    uid = hashlib.md5(opp["url"].encode()).hexdigest()[:12]
     try:
         conn.execute("""
             INSERT OR IGNORE INTO opportunities
-            (id, title, source, url, description, deadline, eligibility, category, location, date_found, raw_text)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (id, title, source, url, description, deadline, eligibility, category, location, date_found)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             uid,
-            opp.get("title", "Untitled"),
+            opp.get("title", "Untitled")[:200],
             opp.get("source", "Unknown"),
             opp.get("url", ""),
-            opp.get("description", ""),
-            opp.get("deadline", ""),
-            opp.get("eligibility", ""),
+            opp.get("description", "")[:500],
+            opp.get("deadline", "Check site"),
+            opp.get("eligibility", "See site"),
             opp.get("category", "Other"),
             opp.get("location", ""),
             datetime.now().isoformat(),
-            opp.get("raw_text", ""),
         ))
         conn.commit()
-        return uid
+        inserted = conn.execute("SELECT changes()").fetchone()[0]
+        return inserted > 0
     except Exception as e:
-        print(f"  DB error: {e}")
-        return None
+        print(f"    DB error: {e}")
+        return False
 
 
-def load_all(conn) -> list:
+def load_all(conn: sqlite3.Connection) -> list:
     cur = conn.execute("SELECT * FROM opportunities ORDER BY date_found DESC")
     cols = [d[0] for d in cur.description]
     return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
-# --- SCRAPERS ---
-def scrape_devpost(conn):
-    """Scrape Devpost hackathon listings."""
-    print("Scraping Devpost...")
+# ─── HELPERS ────────────────────────────────────────────────────────────────
+
+def get(url: str, timeout=15) -> requests.Response | None:
     try:
-        resp = requests.get(
-            "https://devpost.com/hackathons?challenge_type=all&sort_by=Deadline",
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=15,
-        )
-        soup = BeautifulSoup(resp.text, "html.parser")
-        cards = soup.select(".hackathon-tile")
-        for card in cards[:20]:
-            title_el = card.select_one("h3")
-            link_el = card.select_one("a[href]")
-            date_el = card.select_one(".submission-period")
-            prize_el = card.select_one(".prizes")
+        r = requests.get(url, headers=HEADERS, timeout=timeout)
+        r.raise_for_status()
+        return r
+    except Exception as e:
+        print(f"    GET error ({url[:60]}): {e}")
+        return None
+
+
+def guess_category(text: str) -> str:
+    text = text.lower()
+    for cat, keywords in CATEGORY_KEYWORDS.items():
+        if any(kw in text for kw in keywords):
+            return cat
+    return "Other"
+
+
+def find_deadline(text: str) -> str:
+    for pattern in DEADLINE_PATTERNS:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            return m.group(0).strip()
+    if re.search(r"\brolling\b", text, re.IGNORECASE):
+        return "Rolling"
+    if re.search(r"\bongoing\b", text, re.IGNORECASE):
+        return "Ongoing"
+    return "Check site"
+
+
+def clean(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def log(title: str, new: bool):
+    prefix = "  +" if new else "  ·"
+    print(f"{prefix} {title[:70]}")
+
+
+# ─── SCRAPERS ───────────────────────────────────────────────────────────────
+
+def scrape_devpost(conn: sqlite3.Connection):
+    """Devpost — hackathon listings."""
+    print("\n[Devpost]")
+    r = get("https://devpost.com/hackathons?challenge_type=all&sort_by=Deadline&open_to[]=public")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for card in soup.select(".challenge-listing")[:30]:
+        title_el = card.select_one("h2, h3, .challenge-title")
+        link_el  = card.select_one("a[href]")
+        date_el  = card.select_one(".challenge-stats li, .submission-period, .deadline")
+        desc_el  = card.select_one(".challenge-description, p")
+        if not title_el or not link_el:
+            continue
+        href = link_el["href"]
+        if not href.startswith("http"):
+            href = "https://devpost.com" + href
+        opp = {
+            "title":       clean(title_el.get_text()),
+            "source":      "Devpost",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "",
+            "deadline":    clean(date_el.get_text()) if date_el else find_deadline(card.get_text()),
+            "category":    "Hackathon",
+            "location":    "Online",
+            "eligibility": "Open to all",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_mlh(conn: sqlite3.Connection):
+    """Major League Hacking events."""
+    print("\n[MLH]")
+    r = get("https://mlh.io/seasons/2025/events")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for card in soup.select(".event"):
+        title_el = card.select_one("h3")
+        link_el  = card.select_one("a[href]")
+        date_el  = card.select_one(".event-date, p")
+        if not title_el:
+            continue
+        href = (link_el["href"] if link_el else "https://mlh.io")
+        if not href.startswith("http"):
+            href = "https://mlh.io" + href
+        opp = {
+            "title":       clean(title_el.get_text()),
+            "source":      "Major League Hacking",
+            "url":         href,
+            "description": "MLH-sanctioned hackathon for student developers.",
+            "deadline":    clean(date_el.get_text()) if date_el else "Check site",
+            "category":    "Hackathon",
+            "location":    "Various",
+            "eligibility": "Students of all levels",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_nyc(conn: sqlite3.Connection):
+    """Singapore National Youth Council opportunities."""
+    print("\n[NYC Singapore]")
+    r = get("https://www.nyc.gov.sg/en/opportunities")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for card in soup.select("article, .opp-card, .listing-item, .card"):
+        title_el = card.select_one("h2, h3, h4, .title")
+        link_el  = card.select_one("a[href]")
+        desc_el  = card.select_one("p, .desc, .summary")
+        if not title_el:
+            continue
+        href = link_el["href"] if link_el else "https://www.nyc.gov.sg"
+        if href.startswith("/"):
+            href = "https://www.nyc.gov.sg" + href
+        raw = card.get_text()
+        opp = {
+            "title":       clean(title_el.get_text()),
+            "source":      "NYC Singapore",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "",
+            "deadline":    find_deadline(raw),
+            "category":    guess_category(raw),
+            "location":    "Singapore",
+            "eligibility": "Singapore youths aged 15-35",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_astar(conn: sqlite3.Connection):
+    """A*STAR scholarships and internships."""
+    print("\n[A*STAR]")
+    urls = [
+        ("https://www.a-star.edu.sg/Scholarships/for-undergraduate-studies", "Internship"),
+        ("https://www.a-star.edu.sg/Scholarships/for-graduate-studies", "Fellowship"),
+    ]
+    for url, default_cat in urls:
+        r = get(url)
+        if not r:
+            continue
+        soup = BeautifulSoup(r.text, "html.parser")
+        for item in soup.select(".listing-item, article, .scholarship-item, li a")[:15]:
+            title_el = item if item.name == "a" else item.select_one("a, h3, h4")
+            if not title_el:
+                continue
+            title = clean(title_el.get_text())
+            if len(title) < 8:
+                continue
+            href = title_el.get("href", url)
+            if href.startswith("/"):
+                href = "https://www.a-star.edu.sg" + href
+            opp = {
+                "title":       title,
+                "source":      "A*STAR",
+                "url":         href,
+                "description": "A*STAR research/study opportunity for students.",
+                "deadline":    find_deadline(item.get_text()),
+                "category":    default_cat,
+                "location":    "Singapore",
+                "eligibility": "Undergraduates/graduates",
+            }
+            new = save(conn, opp)
+            log(opp["title"], new)
+
+
+def scrape_govtech(conn: sqlite3.Connection):
+    """GovTech Singapore internships and programs."""
+    print("\n[GovTech]")
+    r = get("https://www.tech.gov.sg/careers/students-and-graduates/")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for item in soup.select("article, .program-card, .listing, section"):
+        title_el = item.select_one("h2, h3, h4")
+        desc_el  = item.select_one("p")
+        link_el  = item.select_one("a[href]")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 8:
+            continue
+        href = (link_el["href"] if link_el else "https://www.tech.gov.sg")
+        if href.startswith("/"):
+            href = "https://www.tech.gov.sg" + href
+        opp = {
+            "title":       title,
+            "source":      "GovTech Singapore",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "GovTech program for students and graduates.",
+            "deadline":    find_deadline(item.get_text()),
+            "category":    guess_category(title + (desc_el.get_text() if desc_el else "")),
+            "location":    "Singapore",
+            "eligibility": "Students / recent graduates",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_startup_sg(conn: sqlite3.Connection):
+    """Startup SG programs and grants."""
+    print("\n[Startup SG]")
+    r = get("https://www.startupsg.gov.sg/programmes")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for card in soup.select(".programme-card, article, .card, .listing-item"):
+        title_el = card.select_one("h2, h3, h4, .title")
+        desc_el  = card.select_one("p, .desc")
+        link_el  = card.select_one("a[href]")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 5:
+            continue
+        href = (link_el["href"] if link_el else "https://www.startupsg.gov.sg")
+        if href.startswith("/"):
+            href = "https://www.startupsg.gov.sg" + href
+        opp = {
+            "title":       title,
+            "source":      "Startup SG",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "Startup SG programme for entrepreneurs.",
+            "deadline":    find_deadline(card.get_text()),
+            "category":    guess_category(title),
+            "location":    "Singapore",
+            "eligibility": "Entrepreneurs / startups",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_ymca(conn: sqlite3.Connection):
+    """YMCA Singapore youth programs."""
+    print("\n[YMCA Singapore]")
+    r = get("https://www.ymca.org.sg/programmes")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for card in soup.select("article, .programme, .card, .event"):
+        title_el = card.select_one("h2, h3, h4")
+        desc_el  = card.select_one("p")
+        link_el  = card.select_one("a[href]")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 5:
+            continue
+        href = link_el["href"] if link_el else "https://www.ymca.org.sg"
+        if href.startswith("/"):
+            href = "https://www.ymca.org.sg" + href
+        opp = {
+            "title":       title,
+            "source":      "YMCA Singapore",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "YMCA youth programme.",
+            "deadline":    find_deadline(card.get_text()),
+            "category":    "Youth Program",
+            "location":    "Singapore",
+            "eligibility": "Ages 17-25, Singapore residents",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_pa(conn: sqlite3.Connection):
+    """People's Association youth programs."""
+    print("\n[People's Association]")
+    r = get("https://www.pa.gov.sg/engage/connect-with-government/youth")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for item in soup.select("article, .program, .card, li"):
+        title_el = item.select_one("h2, h3, h4, a")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 10 or len(title) > 150:
+            continue
+        link_el = item.select_one("a[href]")
+        href = link_el["href"] if link_el else "https://www.pa.gov.sg"
+        if href.startswith("/"):
+            href = "https://www.pa.gov.sg" + href
+        opp = {
+            "title":       title,
+            "source":      "People's Association",
+            "url":         href,
+            "description": "PA youth engagement program.",
+            "deadline":    find_deadline(item.get_text()),
+            "category":    "Leadership",
+            "location":    "Singapore",
+            "eligibility": "Singapore citizens/PRs",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_imda(conn: sqlite3.Connection):
+    """IMDA tech programs and grants for students."""
+    print("\n[IMDA]")
+    pages = [
+        "https://www.imda.gov.sg/how-we-can-help/digital-skills-for-life",
+        "https://www.imda.gov.sg/how-we-can-help/talent-and-professionals",
+    ]
+    for url in pages:
+        r = get(url)
+        if not r:
+            continue
+        soup = BeautifulSoup(r.text, "html.parser")
+        for card in soup.select("article, .programme, .card, .listing"):
+            title_el = card.select_one("h2, h3, h4")
+            desc_el  = card.select_one("p")
+            link_el  = card.select_one("a[href]")
+            if not title_el:
+                continue
+            title = clean(title_el.get_text())
+            if len(title) < 8:
+                continue
+            href = (link_el["href"] if link_el else url)
+            if href.startswith("/"):
+                href = "https://www.imda.gov.sg" + href
+            opp = {
+                "title":       title,
+                "source":      "IMDA",
+                "url":         href,
+                "description": clean(desc_el.get_text()) if desc_el else "IMDA digital skills/talent programme.",
+                "deadline":    find_deadline(card.get_text()),
+                "category":    guess_category(title),
+                "location":    "Singapore",
+                "eligibility": "Students and professionals",
+            }
+            new = save(conn, opp)
+            log(opp["title"], new)
+
+
+def scrape_google_gsoc(conn: sqlite3.Connection):
+    """Google Summer of Code — always relevant, add manually."""
+    print("\n[Google Summer of Code]")
+    opp = {
+        "title":       "Google Summer of Code 2026",
+        "source":      "Google",
+        "url":         "https://summerofcode.withgoogle.com",
+        "description": "12-week open source internship program. Work on real projects with experienced mentors and earn a stipend.",
+        "deadline":    "March 2026",
+        "category":    "Bootcamp",
+        "location":    "Online",
+        "eligibility": "Students 18+, any university",
+    }
+    new = save(conn, opp)
+    log(opp["title"], new)
+
+
+def scrape_microsoft_imagine_cup(conn: sqlite3.Connection):
+    """Microsoft Imagine Cup."""
+    print("\n[Microsoft Imagine Cup]")
+    r = get("https://imaginecup.microsoft.com/en-us/Events")
+    if not r:
+        # Fallback static entry
+        opp = {
+            "title":       "Microsoft Imagine Cup 2026",
+            "source":      "Microsoft",
+            "url":         "https://imaginecup.microsoft.com",
+            "description": "Global student tech competition. Use AI and cloud to solve real-world problems. Win up to $85,000 USD.",
+            "deadline":    "February 2026",
+            "category":    "Competition",
+            "location":    "Online + Finals worldwide",
+            "eligibility": "Students worldwide, teams of 1-4",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for card in soup.select("article, .event-card, .competition"):
+        title_el = card.select_one("h2, h3")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 5:
+            continue
+        link_el = card.select_one("a[href]")
+        href = link_el["href"] if link_el else "https://imaginecup.microsoft.com"
+        desc_el = card.select_one("p")
+        opp = {
+            "title":       title,
+            "source":      "Microsoft",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "Microsoft Imagine Cup event.",
+            "deadline":    find_deadline(card.get_text()),
+            "category":    "Competition",
+            "location":    "Online + Finals worldwide",
+            "eligibility": "Students worldwide",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_ai_singapore(conn: sqlite3.Connection):
+    """AI Singapore — AIAP, AI for Kids, AI bootcamps."""
+    print("\n[AI Singapore]")
+    r = get("https://aisingapore.org/research/aiap/")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for section in soup.select("section, .program, article"):
+        title_el = section.select_one("h2, h3")
+        desc_el  = section.select_one("p")
+        link_el  = section.select_one("a[href]")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 5:
+            continue
+        href = link_el["href"] if link_el else "https://aisingapore.org"
+        if href.startswith("/"):
+            href = "https://aisingapore.org" + href
+        opp = {
+            "title":       title,
+            "source":      "AI Singapore",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "AI Singapore talent program.",
+            "deadline":    find_deadline(section.get_text()),
+            "category":    "Bootcamp",
+            "location":    "Singapore",
+            "eligibility": "Fresh grads & career switchers",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_nus_noc(conn: sqlite3.Connection):
+    """NUS Overseas Colleges."""
+    print("\n[NUS Overseas Colleges]")
+    opp = {
+        "title":       "NUS Overseas Colleges Program",
+        "source":      "NUS",
+        "url":         "https://overseas.nus.edu.sg/noc",
+        "description": "Live and work in global startup hubs (Silicon Valley, Stockholm, Shanghai, etc). 6-12 month entrepreneurship program combining startup internship with coursework.",
+        "deadline":    "December 2025",
+        "category":    "Fellowship",
+        "location":    "Various (global)",
+        "eligibility": "NUS undergraduates, Year 2-3",
+    }
+    new = save(conn, opp)
+    log(opp["title"], new)
+
+
+def scrape_lky_competition(conn: sqlite3.Connection):
+    """Lee Kuan Yew Global Business Plan Competition."""
+    print("\n[LKY GBPC]")
+    r = get("https://lkygbpc.smu.edu.sg")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    title_el = soup.select_one("h1, h2")
+    desc_el  = soup.select_one("p")
+    opp = {
+        "title":       clean(title_el.get_text()) if title_el else "Lee Kuan Yew Global Business Plan Competition",
+        "source":      "SMU",
+        "url":         "https://lkygbpc.smu.edu.sg",
+        "description": clean(desc_el.get_text()) if desc_el else "Asia's premier startup competition for student entrepreneurs.",
+        "deadline":    find_deadline(soup.get_text()) or "August 2025",
+        "category":    "Competition",
+        "location":    "Singapore",
+        "eligibility": "Students worldwide, teams of 2-5",
+    }
+    new = save(conn, opp)
+    log(opp["title"], new)
+
+
+def scrape_smu_events(conn: sqlite3.Connection):
+    """SMU student events and competitions."""
+    print("\n[SMU Events]")
+    r = get("https://www.smu.edu.sg/events")
+    if not r:
+        return
+    soup = BeautifulSoup(r.text, "html.parser")
+    for card in soup.select("article, .event-item, .listing"):
+        title_el = card.select_one("h2, h3, h4")
+        link_el  = card.select_one("a[href]")
+        desc_el  = card.select_one("p")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 8:
+            continue
+        raw = card.get_text()
+        cat = guess_category(raw)
+        if cat == "Other":
+            continue  # Skip non-opportunity events
+        href = link_el["href"] if link_el else "https://www.smu.edu.sg"
+        if href.startswith("/"):
+            href = "https://www.smu.edu.sg" + href
+        opp = {
+            "title":       title,
+            "source":      "SMU",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "",
+            "deadline":    find_deadline(raw),
+            "category":    cat,
+            "location":    "Singapore",
+            "eligibility": "Students",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
+
+
+def scrape_eventbrite_sg(conn: sqlite3.Connection):
+    """Eventbrite Singapore — tech and youth events."""
+    print("\n[Eventbrite Singapore]")
+    urls = [
+        "https://www.eventbrite.sg/d/singapore--singapore/hackathon/",
+        "https://www.eventbrite.sg/d/singapore--singapore/youth-program/",
+    ]
+    for url in urls:
+        r = get(url)
+        if not r:
+            continue
+        soup = BeautifulSoup(r.text, "html.parser")
+        for card in soup.select("[data-testid='event-card'], article, .eds-event-card"):
+            title_el = card.select_one("h2, h3, [data-testid='event-card-title']")
+            link_el  = card.select_one("a[href]")
+            date_el  = card.select_one("time, [data-testid='event-card-date']")
             if not title_el or not link_el:
                 continue
+            title = clean(title_el.get_text())
+            if len(title) < 6:
+                continue
+            href = link_el["href"]
+            if not href.startswith("http"):
+                href = "https://www.eventbrite.sg" + href
             opp = {
-                "title": title_el.get_text(strip=True),
-                "source": "Devpost",
-                "url": link_el["href"] if link_el["href"].startswith("http") else "https://devpost.com" + link_el["href"],
-                "description": prize_el.get_text(strip=True) if prize_el else "",
-                "deadline": date_el.get_text(strip=True) if date_el else "",
-                "category": "Hackathon",
-                "raw_text": card.get_text(strip=True),
+                "title":       title,
+                "source":      "Eventbrite",
+                "url":         href,
+                "description": f"Event in Singapore.",
+                "deadline":    clean(date_el.get_text()) if date_el else "Check site",
+                "category":    guess_category(title),
+                "location":    "Singapore",
+                "eligibility": "Open to all",
             }
-            uid = save_opportunity(conn, opp)
-            if uid:
-                print(f"  + {opp['title'][:60]}")
-    except Exception as e:
-        print(f"  Devpost error: {e}")
+            new = save(conn, opp)
+            log(opp["title"], new)
 
 
-def scrape_generic_site(conn, name: str, url: str):
-    """Generic scraper — pulls all text, sends to AI to extract opportunities."""
-    print(f"Scraping {name}...")
-    try:
-        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
-        soup = BeautifulSoup(resp.text, "html.parser")
-        # Remove scripts/styles
-        for tag in soup(["script", "style", "nav", "footer"]):
-            tag.decompose()
-        text = soup.get_text(separator="\n", strip=True)[:6000]  # Limit for AI
-        results = ai_extract_opportunities(text, name, url)
-        for opp in results:
-            opp["source"] = name
-            uid = save_opportunity(conn, opp)
-            if uid:
-                print(f"  + {opp['title'][:60]}")
-    except Exception as e:
-        print(f"  {name} error: {e}")
-
-
-def scrape_google_search(conn, query: str):
-    """
-    Uses SerpAPI (free tier) or Google Custom Search to find opportunities.
-    Sign up at https://serpapi.com for a free API key (100 searches/month free).
-    """
-    SERPAPI_KEY = os.environ.get("SERPAPI_KEY", "")
-    if not SERPAPI_KEY:
-        print(f"  [Skip] No SERPAPI_KEY set. Query: {query}")
+def scrape_mccy(conn: sqlite3.Connection):
+    """MCCY youth programs."""
+    print("\n[MCCY]")
+    r = get("https://www.mccy.gov.sg/sector-involvement/youth")
+    if not r:
         return
-
-    print(f"Google search: {query[:50]}...")
-    try:
-        resp = requests.get(
-            "https://serpapi.com/search",
-            params={"q": query, "api_key": SERPAPI_KEY, "num": 10},
-            timeout=15,
-        )
-        data = resp.json()
-        results = data.get("organic_results", [])
-        for r in results:
-            raw = f"{r.get('title','')} {r.get('snippet','')}"
-            opp = ai_classify_single(raw, r.get("title", ""), r.get("link", ""))
-            if opp:
-                opp["source"] = "Google Search"
-                opp["url"] = r.get("link", "")
-                save_opportunity(conn, opp)
-                print(f"  + {opp['title'][:60]}")
-    except Exception as e:
-        print(f"  Search error: {e}")
-
-
-# --- AI LAYER (Claude) ---
-def ai_extract_opportunities(page_text: str, source: str, source_url: str) -> list:
-    """Send scraped page text to Claude, extract structured opportunity data."""
-    if not ANTHROPIC_API_KEY or ANTHROPIC_API_KEY == "YOUR_API_KEY_HERE":
-        return []
-
-    prompt = f"""You are an assistant that extracts youth opportunity listings from web page text.
-
-Source: {source}
-URL: {source_url}
-
-Page text:
----
-{page_text}
----
-
-Extract all opportunities (hackathons, competitions, leadership camps, fellowships, bootcamps, internships, youth programs) from this text.
-Return a JSON array. Each item must have:
-- title (string)
-- description (string, 1-2 sentences)
-- deadline (string, e.g. "15 Jan 2025" or "Rolling" or "Unknown")
-- eligibility (string, e.g. "Students 18-25" or "Open to all")
-- category (one of: Hackathon, Leadership, Fellowship, Bootcamp, Internship, Competition, Youth Program, Other)
-- location (string, e.g. "Singapore", "Online", "Worldwide")
-- url (string, full URL if found, else use "{source_url}")
-
-Return ONLY the JSON array, no explanation. If nothing found, return [].
-"""
-
-    try:
-        resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json={
-                "model": "claude-haiku-4-5-20251001",
-                "max_tokens": 2000,
-                "messages": [{"role": "user", "content": prompt}],
-            },
-            timeout=30,
-        )
-        text = resp.json()["content"][0]["text"]
-        # Strip markdown code fences if present
-        text = text.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
-        return json.loads(text)
-    except Exception as e:
-        print(f"  AI extract error: {e}")
-        return []
+    soup = BeautifulSoup(r.text, "html.parser")
+    for item in soup.select("article, .programme, .card"):
+        title_el = item.select_one("h2, h3, h4")
+        if not title_el:
+            continue
+        title = clean(title_el.get_text())
+        if len(title) < 8:
+            continue
+        link_el = item.select_one("a[href]")
+        href = link_el["href"] if link_el else "https://www.mccy.gov.sg"
+        if href.startswith("/"):
+            href = "https://www.mccy.gov.sg" + href
+        desc_el = item.select_one("p")
+        opp = {
+            "title":       title,
+            "source":      "MCCY",
+            "url":         href,
+            "description": clean(desc_el.get_text()) if desc_el else "MCCY youth programme.",
+            "deadline":    find_deadline(item.get_text()),
+            "category":    "Youth Program",
+            "location":    "Singapore",
+            "eligibility": "Singapore youths",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
 
 
-def ai_classify_single(raw_text: str, title: str, url: str) -> dict | None:
-    """Classify a single search result — is it an opportunity?"""
-    if not ANTHROPIC_API_KEY or ANTHROPIC_API_KEY == "YOUR_API_KEY_HERE":
-        return None
+# ─── EXPORT ─────────────────────────────────────────────────────────────────
 
-    prompt = f"""Is this a real youth opportunity (hackathon, leadership camp, fellowship, bootcamp, competition, program)? If yes, return a JSON object. If no, return null.
-
-Title: {title}
-Text: {raw_text}
-URL: {url}
-
-JSON fields: title, description, deadline, eligibility, category, location
-Return ONLY JSON or null."""
-
-    try:
-        resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json={
-                "model": "claude-haiku-4-5-20251001",
-                "max_tokens": 400,
-                "messages": [{"role": "user", "content": prompt}],
-            },
-            timeout=20,
-        )
-        text = resp.json()["content"][0]["text"].strip()
-        if text.lower() == "null" or not text.startswith("{"):
-            return None
-        return json.loads(text)
-    except Exception:
-        return None
-
-
-# --- EXPORT ---
-def export_json(conn):
-    """Export all opportunities to data/opportunities.json for the website."""
+def export_json(conn: sqlite3.Connection):
     opps = load_all(conn)
     Path("data").mkdir(exist_ok=True)
-    with open("data/opportunities.json", "w") as f:
-        json.dump(opps, f, indent=2)
-    print(f"\nExported {len(opps)} opportunities to data/opportunities.json")
+    # Strip raw_text if it crept in from old db
+    clean_opps = [{k: v for k, v in o.items() if k != "raw_text"} for o in opps]
+    with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+        json.dump(clean_opps, f, indent=2, ensure_ascii=False)
+    print(f"\n✓ Exported {len(clean_opps)} opportunities → {OUTPUT_JSON}")
 
 
-# --- MAIN ---
-def run_scraper():
-    print(f"\n{'='*50}")
-    print(f"Opportunity Finder — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print("="*50)
+# ─── MAIN ────────────────────────────────────────────────────────────────────
+
+def run():
+    print(f"\n{'═'*55}")
+    print(f"  Opportunity Finder  ·  {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"{'═'*55}")
 
     conn = init_db()
 
-    # 1. Scrape known sites
-    scrape_devpost(conn)
+    scrapers = [
+        scrape_devpost,
+        scrape_mlh,
+        scrape_nyc,
+        scrape_astar,
+        scrape_govtech,
+        scrape_startup_sg,
+        scrape_ymca,
+        scrape_pa,
+        scrape_imda,
+        scrape_google_gsoc,
+        scrape_microsoft_imagine_cup,
+        scrape_ai_singapore,
+        scrape_nus_noc,
+        scrape_lky_competition,
+        scrape_smu_events,
+        scrape_eventbrite_sg,
+        scrape_mccy,
+    ]
 
-    for site in TARGET_SITES:
-        scrape_generic_site(conn, site["name"], site["url"])
-        time.sleep(2)  # Be polite
+    for scraper in scrapers:
+        try:
+            scraper(conn)
+        except Exception as e:
+            print(f"  !! {scraper.__name__} crashed: {e}")
+        time.sleep(1.5)  # Be polite to servers
 
-    # 2. Google search (needs SERPAPI_KEY env var)
-    for query in SEARCH_KEYWORDS[:3]:  # Limit to save API quota
-        scrape_google_search(conn, query)
-        time.sleep(1)
-
-    # 3. Export for website
     export_json(conn)
-
-    print("\nDone!")
+    print("\nDone! 🎉\n")
 
 
 if __name__ == "__main__":
-    run_scraper()
+    run()

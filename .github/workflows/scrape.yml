@@ -1,0 +1,37 @@
+name: Run Opportunity Scraper
+
+on:
+  schedule:
+    - cron: '0 9 * * 1,4'  # Every Monday and Thursday at 9am UTC
+  workflow_dispatch:         # Also allow manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 anthropic
+
+      - name: Run scraper
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SERPAPI_KEY: ${{ secrets.SERPAPI_KEY }}
+        run: python scraper.py
+
+      - name: Commit updated data
+        run: |
+          git config --global user.name "opportunity-bot"
+          git config --global user.email "bot@github.com"
+          git add data/opportunities.json
+          git diff --staged --quiet || git commit -m "Update opportunities $(date +'%Y-%m-%d')"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "sample1",
+    "title": "Global Hack Week: Open Source",
+    "source": "Major League Hacking",
+    "url": "https://mlh.io",
+    "description": "A week-long virtual hackathon open to all student developers worldwide. Build open source projects, win prizes, and connect with thousands of hackers.",
+    "deadline": "Rolling — check site",
+    "eligibility": "Students of all levels",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2025-06-01T09:00:00"
+  },
+  {
+    "id": "sample2",
+    "title": "NUS Overseas Colleges Program",
+    "source": "NUS",
+    "url": "https://overseas.nus.edu.sg/noc",
+    "description": "Live and work in global startup hubs like Silicon Valley, Stockholm, Shanghai, and more. 6-12 month entrepreneurship program combining startup internship with coursework.",
+    "deadline": "December 2025",
+    "eligibility": "NUS undergraduates, Year 2-3",
+    "category": "Fellowship",
+    "location": "Various (global)",
+    "date_found": "2025-06-01T09:00:00"
+  },
+  {
+    "id": "sample3",
+    "title": "Lee Kuan Yew Global Business Plan Competition",
+    "source": "SMU",
+    "url": "https://lkygbpc.smu.edu.sg",
+    "description": "Asia's premier startup competition for student entrepreneurs. Pitch your venture to top VCs and win up to $100,000 in prizes.",
+    "deadline": "August 2025",
+    "eligibility": "Students worldwide, teams of 2-5",
+    "category": "Competition",
+    "location": "Singapore",
+    "date_found": "2025-06-01T09:00:00"
+  },
+  {
+    "id": "sample4",
+    "title": "Singapore International Pre-Graduate Award (SIPGA)",
+    "source": "A*STAR",
+    "url": "https://www.a-star.edu.sg/Scholarships/for-undergraduate-studies/sipga",
+    "description": "Research internship at A*STAR institutes. Work alongside world-class researchers on cutting-edge projects in science and technology.",
+    "deadline": "March 2026 (next cycle)",
+    "eligibility": "Penultimate/final year undergrads, min CAP 4.0",
+    "category": "Internship",
+    "location": "Singapore",
+    "date_found": "2025-06-01T09:00:00"
+  },
+  {
+    "id": "sample5",
+    "title": "Youth Action Challenge",
+    "source": "MCCY / NYC",
+    "url": "https://www.nyc.gov.sg",
+    "description": "A national platform for youths to co-create solutions to social issues in Singapore. Get mentorship, funding and support to turn your ideas into action.",
+    "deadline": "Applications open Sep 2025",
+    "eligibility": "Singapore youths aged 15-35",
+    "category": "Youth Program",
+    "location": "Singapore",
+    "date_found": "2025-06-01T09:00:00"
+  },
+  {
+    "id": "sample6",
+    "title": "Google Summer of Code",
+    "source": "Google",
+    "url": "https://summerofcode.withgoogle.com",
+    "description": "Contribute to open source organizations over a 12-week summer program. Receive a stipend and mentorship from experienced open source developers.",
+    "deadline": "March 2026 (next cycle)",
+    "eligibility": "Students 18+, any university",
+    "category": "Bootcamp",
+    "location": "Online",
+    "date_found": "2025-06-01T09:00:00"
+  },
+  {
+    "id": "sample7",
+    "title": "YMCA Youth Leadership Academy",
+    "source": "YMCA Singapore",
+    "url": "https://www.ymca.org.sg",
+    "description": "Develop your leadership potential through workshops, community projects, and mentorship from industry leaders. Cohort-based, 3-month program.",
+    "deadline": "Rolling intake",
+    "eligibility": "Ages 17-25, Singapore residents",
+    "category": "Leadership",
+    "location": "Singapore",
+    "date_found": "2025-06-01T09:00:00"
+  },
+  {
+    "id": "sample8",
+    "title": "Hack For Good",
+    "source": "Devpost",
+    "url": "https://devpost.com",
+    "description": "48-hour hackathon focused on building tech solutions for social good. Organized with support from local NGOs and government agencies.",
+    "deadline": "July 2025",
+    "eligibility": "Open to all, teams of up to 4",
+    "category": "Hackathon",
+    "location": "Singapore",
+    "date_found": "2025-06-01T09:00:00"
+  }
+]

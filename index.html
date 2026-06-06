@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Opportunity Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.15);
+    --text: #f0eee8;
+    --muted: #7a7890;
+    --accent: #c8f542;
+    --accent2: #7b5cf0;
+    --accent3: #f05c7b;
+    --card-radius: 16px;
+
+    --cat-hackathon: #f05c7b;
+    --cat-leadership: #7b5cf0;
+    --cat-fellowship: #3b9eff;
+    --cat-bootcamp: #f0a030;
+    --cat-internship: #30d0a0;
+    --cat-competition: #ff6b35;
+    --cat-youth: #c8f542;
+    --cat-other: #7a7890;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ---- NOISE TEXTURE ---- */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ---- GLOW ORBS ---- */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb-1 { width: 600px; height: 600px; background: rgba(123,92,240,0.12); top: -200px; right: -100px; }
+  .orb-2 { width: 400px; height: 400px; background: rgba(200,245,66,0.06); bottom: 100px; left: -100px; }
+
+  /* ---- LAYOUT ---- */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ---- HEADER ---- */
+  header {
+    padding: 64px 0 48px;
+    position: relative;
+  }
+  .header-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,245,66,0.1);
+    border: 1px solid rgba(200,245,66,0.2);
+    border-radius: 100px;
+    padding: 4px 14px 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .header-tag span {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(38px, 6vw, 72px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+  .subtitle {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+  }
+
+  /* ---- STATS BAR ---- */
+  .stats-bar {
+    display: flex;
+    gap: 32px;
+    margin-top: 40px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ---- CONTROLS ---- */
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin: 40px 0 32px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .search-wrap {
+    flex: 1;
+    min-width: 240px;
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    width: 16px; height: 16px;
+    pointer-events: none;
+  }
+  input[type="search"] {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px 11px 40px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="search"]:focus { border-color: var(--border-hover); }
+  input[type="search"]::placeholder { color: var(--muted); }
+
+  .filter-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .pill:hover { border-color: var(--border-hover); color: var(--text); }
+  .pill.active {
+    border-color: transparent;
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ---- SORT + COUNT ---- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .result-count { font-size: 13px; color: var(--muted); }
+  .result-count strong { color: var(--text); font-weight: 500; }
+  select {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ---- GRID ---- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+
+  /* ---- CARD ---- */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--cat-color, var(--border));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+  }
+  .card:hover::before { opacity: 1; }
+
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .cat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .card-source {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text);
+  }
+  .card-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-meta {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .meta-item svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .deadline {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .deadline.urgent { color: var(--cat-hackathon); }
+  .open-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 5px 12px;
+    border: 1px solid rgba(200,245,66,0.2);
+    border-radius: 6px;
+    background: rgba(200,245,66,0.05);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .open-btn:hover { background: rgba(200,245,66,0.12); border-color: rgba(200,245,66,0.4); }
+  .open-btn svg { width: 11px; height: 11px; }
+
+  /* ---- EMPTY STATE ---- */
+  .empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty h3 { font-family: 'Syne', sans-serif; font-size: 20px; color: var(--text); margin-bottom: 8px; }
+
+  /* ---- LOADING ---- */
+  .loading {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px;
+    color: var(--muted);
+  }
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- REFRESH BUTTON ---- */
+  .refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(200,245,66,0.1);
+    border: 1px solid rgba(200,245,66,0.25);
+    border-radius: 10px;
+    padding: 10px 18px;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .refresh-btn:hover { background: rgba(200,245,66,0.18); }
+  .refresh-btn svg { width: 14px; height: 14px; }
+
+  /* ---- FOOTER ---- */
+  footer {
+    margin-top: 80px;
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* ---- CARD APPEAR ANIMATION ---- */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card { animation: fadeUp 0.35s ease both; }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+    .stats-bar { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="wrap">
+  <header>
+    <div class="header-tag"><span></span> Auto-updated</div>
+    <h1>Find your next<br><em>opportunity.</em></h1>
+    <p class="subtitle">Hackathons, leadership camps, fellowships, and youth programs — scraped automatically, all in one place.</p>
+
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-num" id="total-count">—</span>
+        <span class="stat-label">Opportunities</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="cat-count">—</span>
+        <span class="stat-label">Categories</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="source-count">—</span>
+        <span class="stat-label">Sources</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num" id="last-updated">—</span>
+        <span class="stat-label">Last updated</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="search" placeholder="Search opportunities…" autocomplete="off">
+    </div>
+    <div class="filter-pills" id="filter-pills">
+      <!-- Populated by JS -->
+    </div>
+    <button class="refresh-btn" onclick="loadData()">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <div class="toolbar">
+    <div class="result-count" id="result-count"></div>
+    <select id="sort-select" onchange="renderCards()">
+      <option value="date">Newest first</option>
+      <option value="deadline">By deadline</option>
+      <option value="title">Alphabetical</option>
+    </select>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="loading"><div class="spinner"></div> Loading opportunities…</div>
+  </div>
+
+  <footer>
+    <span>Built with Python + Claude AI · Runs on GitHub Actions</span>
+    <span>Data from: <a href="https://devpost.com" target="_blank">Devpost</a>, MLH, Eventbrite &amp; more</span>
+  </footer>
+</div>
+
+<script>
+const CAT_COLORS = {
+  'hackathon':    { bg: 'rgba(240,92,123,0.15)', text: '#f05c7b', dot: '#f05c7b' },
+  'leadership':   { bg: 'rgba(123,92,240,0.15)', text: '#9b7cf0', dot: '#7b5cf0' },
+  'fellowship':   { bg: 'rgba(59,158,255,0.15)', text: '#3b9eff', dot: '#3b9eff' },
+  'bootcamp':     { bg: 'rgba(240,160,48,0.15)', text: '#f0a030', dot: '#f0a030' },
+  'internship':   { bg: 'rgba(48,208,160,0.15)', text: '#30d0a0', dot: '#30d0a0' },
+  'competition':  { bg: 'rgba(255,107,53,0.15)', text: '#ff6b35', dot: '#ff6b35' },
+  'youth program':{ bg: 'rgba(200,245,66,0.15)', text: '#c8f542', dot: '#c8f542' },
+  'other':        { bg: 'rgba(122,120,144,0.15)', text: '#7a7890', dot: '#7a7890' },
+};
+
+function catKey(cat) { return (cat || 'other').toLowerCase(); }
+function catColor(cat) { return CAT_COLORS[catKey(cat)] || CAT_COLORS['other']; }
+
+let allOpps = [];
+let activeFilter = 'all';
+
+async function loadData() {
+  document.getElementById('grid').innerHTML = '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  try {
+    // Try loading from data/opportunities.json (relative path)
+    // In production this is the file the scraper writes to
+    const resp = await fetch('data/opportunities.json?' + Date.now());
+    if (!resp.ok) throw new Error('not found');
+    allOpps = await resp.json();
+  } catch {
+    // Fallback: use embedded demo data so the page always works
+    allOpps = DEMO_DATA;
+  }
+  updateStats();
+  buildFilters();
+  renderCards();
+}
+
+function updateStats() {
+  document.getElementById('total-count').textContent = allOpps.length;
+  const cats = new Set(allOpps.map(o => catKey(o.category)));
+  document.getElementById('cat-count').textContent = cats.size;
+  const sources = new Set(allOpps.map(o => o.source));
+  document.getElementById('source-count').textContent = sources.size;
+  if (allOpps.length) {
+    const latest = allOpps.reduce((a,b) => a.date_found > b.date_found ? a : b);
+    const d = new Date(latest.date_found);
+    document.getElementById('last-updated').textContent =
+      d.toLocaleDateString('en-SG', { day: 'numeric', month: 'short' });
+  }
+}
+
+function buildFilters() {
+  const cats = [...new Set(allOpps.map(o => o.category || 'Other'))].sort();
+  const container = document.getElementById('filter-pills');
+  container.innerHTML = '';
+
+  const allPill = pill('All', 'all', true);
+  container.appendChild(allPill);
+  cats.forEach(cat => container.appendChild(pill(cat, cat, false)));
+}
+
+function pill(label, value, isActive) {
+  const el = document.createElement('button');
+  const c = catColor(value === 'all' ? 'other' : value);
+  el.className = 'pill' + (isActive ? ' active' : '');
+  el.dataset.value = value;
+  if (value !== 'all') {
+    el.style.setProperty('--pill-color', c.dot);
+    if (isActive) {
+      el.style.background = c.bg;
+      el.style.color = c.text;
+      el.style.borderColor = c.dot + '55';
+    }
+  }
+  el.innerHTML = value !== 'all'
+    ? `<span class="dot" style="background:${c.dot}"></span>${label}`
+    : label;
+  el.onclick = () => setFilter(value);
+  return el;
+}
+
+function setFilter(val) {
+  activeFilter = val;
+  document.querySelectorAll('.pill').forEach(p => {
+    const isActive = p.dataset.value === val;
+    p.classList.toggle('active', isActive);
+    const c = catColor(val === 'all' ? 'other' : val);
+    if (isActive && val !== 'all') {
+      p.style.background = c.bg;
+      p.style.color = c.text;
+      p.style.borderColor = c.dot + '55';
+    } else {
+      p.style.background = '';
+      p.style.color = '';
+      p.style.borderColor = '';
+    }
+  });
+  renderCards();
+}
+
+function filtered() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  return allOpps.filter(o => {
+    const matchCat = activeFilter === 'all' || (o.category || 'Other') === activeFilter;
+    if (!matchCat) return false;
+    if (!q) return true;
+    return (o.title + o.description + o.source + o.eligibility + o.location)
+      .toLowerCase().includes(q);
+  });
+}
+
+function sorted(list) {
+  const by = document.getElementById('sort-select').value;
+  return [...list].sort((a, b) => {
+    if (by === 'date') return b.date_found.localeCompare(a.date_found);
+    if (by === 'title') return a.title.localeCompare(b.title);
+    return 0; // deadline sort: leave as-is (hard to parse varied formats)
+  });
+}
+
+function renderCards() {
+  const grid = document.getElementById('grid');
+  const list = sorted(filtered());
+
+  document.getElementById('result-count').innerHTML =
+    `Showing <strong>${list.length}</strong> of ${allOpps.length} opportunities`;
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty">
+      <div class="empty-icon">🔍</div>
+      <h3>No matches found</h3>
+      <p>Try a different search or category filter</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = '';
+  list.forEach((opp, i) => {
+    const card = buildCard(opp);
+    card.style.animationDelay = Math.min(i * 40, 400) + 'ms';
+    grid.appendChild(card);
+  });
+}
+
+function buildCard(opp) {
+  const c = catColor(opp.category);
+  const card = document.createElement('a');
+  card.className = 'card';
+  card.href = opp.url || '#';
+  card.target = '_blank';
+  card.rel = 'noopener noreferrer';
+  card.style.setProperty('--cat-color', c.dot);
+
+  const deadline = opp.deadline || 'Check site';
+  const isUrgent = /jan|feb|mar|apr/i.test(deadline);
+
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="cat-badge" style="background:${c.bg};color:${c.text}">
+        <span class="dot" style="background:${c.dot}"></span>
+        ${opp.category || 'Other'}
+      </span>
+      <span class="card-source">${opp.source}</span>
+    </div>
+    <div class="card-title">${escHtml(opp.title)}</div>
+    <div class="card-desc">${escHtml(opp.description || '')}</div>
+    <div class="card-meta">
+      ${opp.location ? `<span class="meta-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        ${escHtml(opp.location)}
+      </span>` : ''}
+      ${opp.eligibility ? `<span class="meta-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        ${escHtml(opp.eligibility)}
+      </span>` : ''}
+    </div>
+    <div class="card-footer">
+      <span class="deadline ${isUrgent ? 'urgent' : ''}">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;display:inline;margin-right:3px;vertical-align:-1px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        ${escHtml(deadline)}
+      </span>
+      <span class="open-btn" onclick="void(0)">
+        Apply
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </span>
+    </div>`;
+  return card;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('search').addEventListener('input', renderCards);
+
+// Embed demo data so the page works standalone (before running the scraper)
+const DEMO_DATA = [
+  { id:'s1', title:'Global Hack Week: Open Source', source:'Major League Hacking', url:'https://mlh.io', description:'A week-long virtual hackathon for student developers worldwide. Build open source projects and win prizes.', deadline:'Rolling — check site', eligibility:'Students of all levels', category:'Hackathon', location:'Online', date_found:'2025-06-01T09:00:00' },
+  { id:'s2', title:'NUS Overseas Colleges Program', source:'NUS', url:'https://overseas.nus.edu.sg/noc', description:'Live and work in global startup hubs like Silicon Valley and Stockholm. 6-12 month entrepreneurship program.', deadline:'December 2025', eligibility:'NUS undergraduates, Year 2-3', category:'Fellowship', location:'Various (global)', date_found:'2025-06-01T09:00:00' },
+  { id:'s3', title:'Lee Kuan Yew Global Business Plan Competition', source:'SMU', url:'https://lkygbpc.smu.edu.sg', description:"Asia's premier startup competition for student entrepreneurs. Pitch your venture to top VCs.", deadline:'August 2025', eligibility:'Students worldwide, teams of 2-5', category:'Competition', location:'Singapore', date_found:'2025-06-01T09:00:00' },
+  { id:'s4', title:'Singapore International Pre-Graduate Award', source:'A*STAR', url:'https://www.a-star.edu.sg', description:'Research internship at A*STAR. Work alongside world-class researchers on cutting-edge projects.', deadline:'March 2026', eligibility:'Penultimate/final year undergrads, min CAP 4.0', category:'Internship', location:'Singapore', date_found:'2025-05-28T09:00:00' },
+  { id:'s5', title:'Youth Action Challenge', source:'MCCY / NYC', url:'https://www.nyc.gov.sg', description:'National platform for youths to co-create solutions to social issues. Get mentorship and funding.', deadline:'Applications open Sep 2025', eligibility:'Singapore youths aged 15-35', category:'Youth Program', location:'Singapore', date_found:'2025-05-25T09:00:00' },
+  { id:'s6', title:'Google Summer of Code', source:'Google', url:'https://summerofcode.withgoogle.com', description:'Contribute to open source projects over a 12-week program. Receive a stipend and mentorship.', deadline:'March 2026', eligibility:'Students 18+, any university', category:'Bootcamp', location:'Online', date_found:'2025-05-20T09:00:00' },
+  { id:'s7', title:'YMCA Youth Leadership Academy', source:'YMCA Singapore', url:'https://www.ymca.org.sg', description:'Develop your leadership potential through workshops, community projects, and mentorship.', deadline:'Rolling intake', eligibility:'Ages 17-25, Singapore residents', category:'Leadership', location:'Singapore', date_found:'2025-05-18T09:00:00' },
+  { id:'s8', title:'Hack For Good', source:'Devpost', url:'https://devpost.com', description:'48-hour hackathon focused on building tech solutions for social good. Organized with NGO support.', deadline:'July 2025', eligibility:'Open to all, teams of up to 4', category:'Hackathon', location:'Singapore', date_found:'2025-05-15T09:00:00' },
+  { id:'s9', title:'Shell LiveWIRE', source:'Shell', url:'https://www.shelllivewireawards.com', description:'Business start-up support for young entrepreneurs. Get funding, mentoring, and networking opportunities.', deadline:'Ongoing', eligibility:'Entrepreneurs aged 18-30', category:'Fellowship', location:'Singapore', date_found:'2025-05-10T09:00:00' },
+  { id:'s10', title:'Microsoft Imagine Cup', source:'Microsoft', url:'https://imaginecup.microsoft.com', description:"The world's premier student technology competition. Build a project that uses AI to solve real-world issues.", deadline:'February 2026', eligibility:'Students worldwide, teams of 1-4', category:'Competition', location:'Online + Finals worldwide', date_found:'2025-05-08T09:00:00' },
+  { id:'s11', title:'Community Leadership Programme', source:'People\'s Association', url:'https://www.pa.gov.sg', description:'Structured leadership development for youth leaders in Singapore communities. Workshops and project funding included.', deadline:'January 2026', eligibility:'Singapore citizens/PRs aged 16-30', category:'Leadership', location:'Singapore', date_found:'2025-05-05T09:00:00' },
+  { id:'s12', title:'AI for Good Bootcamp', source:'AI Singapore', url:'https://aisingapore.org', description:'Intensive 3-month AI engineering bootcamp. Learn to build production AI systems with industry mentors.', deadline:'October 2025', eligibility:'Fresh grads & career switchers', category:'Bootcamp', location:'Singapore', date_found:'2025-05-01T09:00:00' },
+];
+
+loadData();
+</script>
+</body>
+</html>

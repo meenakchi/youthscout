@@ -50,6 +50,10 @@ DEADLINE_PATTERNS = [
     r"\b20\d{2}[\s/\-]+\d{1,2}[\s/\-]+\d{1,2}\b",
 ]
 
+# Current year — used everywhere a year needs to stay dynamic
+CURRENT_YEAR = datetime.now().year
+NEXT_YEAR    = CURRENT_YEAR + 1
+
 
 # ─── DATABASE ───────────────────────────────────────────────────────────────
 
@@ -78,7 +82,7 @@ def save(conn: sqlite3.Connection, opp: dict) -> bool:
     uid = hashlib.md5(opp["url"].encode()).hexdigest()[:12]
     try:
         conn.execute("""
-            INSERT OR IGNORE INTO opportunities
+            INSERT OR REPLACE INTO opportunities
             (id, title, source, url, description, deadline, eligibility, category, location, date_found)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
@@ -131,7 +135,15 @@ def find_deadline(text: str) -> str:
     for pattern in DEADLINE_PATTERNS:
         m = re.search(pattern, text, re.IGNORECASE)
         if m:
-            return m.group(0).strip()
+            # Only return dates that are current year or future
+            match_str = m.group(0).strip()
+            year_match = re.search(r"20(\d{2})", match_str)
+            if year_match:
+                year = int("20" + year_match.group(1))
+                if year >= CURRENT_YEAR:
+                    return match_str
+            else:
+                return match_str
     if re.search(r"\brolling\b", text, re.IGNORECASE):
         return "Rolling"
     if re.search(r"\bongoing\b", text, re.IGNORECASE):
@@ -182,33 +194,40 @@ def scrape_devpost(conn: sqlite3.Connection):
 
 
 def scrape_mlh(conn: sqlite3.Connection):
-    """Major League Hacking events."""
+    """Major League Hacking events — tries current season, falls back to next."""
     print("\n[MLH]")
-    r = get("https://mlh.io/seasons/2025/events")
-    if not r:
-        return
-    soup = BeautifulSoup(r.text, "html.parser")
-    for card in soup.select(".event"):
-        title_el = card.select_one("h3")
-        link_el  = card.select_one("a[href]")
-        date_el  = card.select_one(".event-date, p")
-        if not title_el:
-            continue
-        href = (link_el["href"] if link_el else "https://mlh.io")
-        if not href.startswith("http"):
-            href = "https://mlh.io" + href
-        opp = {
-            "title":       clean(title_el.get_text()),
-            "source":      "Major League Hacking",
-            "url":         href,
-            "description": "MLH-sanctioned hackathon for student developers.",
-            "deadline":    clean(date_el.get_text()) if date_el else "Check site",
-            "category":    "Hackathon",
-            "location":    "Various",
-            "eligibility": "Students of all levels",
-        }
-        new = save(conn, opp)
-        log(opp["title"], new)
+    # Try current year season first, then next year
+    for season_year in [CURRENT_YEAR, NEXT_YEAR]:
+        r = get(f"https://mlh.io/seasons/{season_year}/events")
+        if r and r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            events = soup.select(".event")
+            if events:
+                print(f"    Using season {season_year} ({len(events)} events found)")
+                for card in events:
+                    title_el = card.select_one("h3")
+                    link_el  = card.select_one("a[href]")
+                    date_el  = card.select_one(".event-date, p")
+                    if not title_el:
+                        continue
+                    href = (link_el["href"] if link_el else "https://mlh.io")
+                    if not href.startswith("http"):
+                        href = "https://mlh.io" + href
+                    opp = {
+                        "title":       clean(title_el.get_text()),
+                        "source":      "Major League Hacking",
+                        "url":         href,
+                        "description": "MLH-sanctioned hackathon for student developers.",
+                        "deadline":    clean(date_el.get_text()) if date_el else "Check site",
+                        "category":    "Hackathon",
+                        "location":    "Various",
+                        "eligibility": "Students of all levels",
+                    }
+                    new = save(conn, opp)
+                    log(opp["title"], new)
+                return  # Success, stop trying
+        time.sleep(1)
+    print("    No MLH events found for current or next season")
 
 
 def scrape_nyc(conn: sqlite3.Connection):
@@ -448,14 +467,19 @@ def scrape_imda(conn: sqlite3.Connection):
 
 
 def scrape_google_gsoc(conn: sqlite3.Connection):
-    """Google Summer of Code — always relevant, add manually."""
+    """Google Summer of Code — always relevant, year stays dynamic."""
     print("\n[Google Summer of Code]")
+    # GSoC cycle: applications open ~Jan, deadline ~April, for that calendar year
+    # If we're past July, next year's cycle is the relevant one
+    month = datetime.now().month
+    gsoc_year = NEXT_YEAR if month >= 8 else CURRENT_YEAR
+    deadline  = f"April {gsoc_year}"
     opp = {
-        "title":       "Google Summer of Code 2026",
+        "title":       f"Google Summer of Code {gsoc_year}",
         "source":      "Google",
         "url":         "https://summerofcode.withgoogle.com",
         "description": "12-week open source internship program. Work on real projects with experienced mentors and earn a stipend.",
-        "deadline":    "March 2026",
+        "deadline":    deadline,
         "category":    "Bootcamp",
         "location":    "Online",
         "eligibility": "Students 18+, any university",
@@ -469,13 +493,15 @@ def scrape_microsoft_imagine_cup(conn: sqlite3.Connection):
     print("\n[Microsoft Imagine Cup]")
     r = get("https://imaginecup.microsoft.com/en-us/Events")
     if not r:
-        # Fallback static entry
+        # Fallback: Imagine Cup cycle is ~Oct–Feb for the following year's finals
+        month = datetime.now().month
+        cup_year = NEXT_YEAR if month >= 6 else CURRENT_YEAR
         opp = {
-            "title":       "Microsoft Imagine Cup 2026",
+            "title":       f"Microsoft Imagine Cup {cup_year}",
             "source":      "Microsoft",
             "url":         "https://imaginecup.microsoft.com",
             "description": "Global student tech competition. Use AI and cloud to solve real-world problems. Win up to $85,000 USD.",
-            "deadline":    "February 2026",
+            "deadline":    f"February {cup_year}",
             "category":    "Competition",
             "location":    "Online + Finals worldwide",
             "eligibility": "Students worldwide, teams of 1-4",
@@ -542,14 +568,17 @@ def scrape_ai_singapore(conn: sqlite3.Connection):
 
 
 def scrape_nus_noc(conn: sqlite3.Connection):
-    """NUS Overseas Colleges."""
+    """NUS Overseas Colleges — deadline is always Dec of current year for next intake."""
     print("\n[NUS Overseas Colleges]")
+    month = datetime.now().month
+    # Applications for next year typically close Dec; if past Dec, point to next year
+    intake_year = NEXT_YEAR if month == 12 else CURRENT_YEAR
     opp = {
         "title":       "NUS Overseas Colleges Program",
         "source":      "NUS",
         "url":         "https://overseas.nus.edu.sg/noc",
         "description": "Live and work in global startup hubs (Silicon Valley, Stockholm, Shanghai, etc). 6-12 month entrepreneurship program combining startup internship with coursework.",
-        "deadline":    "December 2025",
+        "deadline":    f"December {intake_year}",
         "category":    "Fellowship",
         "location":    "Various (global)",
         "eligibility": "NUS undergraduates, Year 2-3",
@@ -565,6 +594,13 @@ def scrape_lky_competition(conn: sqlite3.Connection):
     if not r:
         return
     soup = BeautifulSoup(r.text, "html.parser")
+    full_text = soup.get_text()
+    # Try to find a real deadline on the page first; fallback to dynamic year
+    deadline = find_deadline(full_text)
+    if deadline == "Check site":
+        month = datetime.now().month
+        comp_year = NEXT_YEAR if month >= 9 else CURRENT_YEAR
+        deadline = f"August {comp_year}"
     title_el = soup.select_one("h1, h2")
     desc_el  = soup.select_one("p")
     opp = {
@@ -572,7 +608,7 @@ def scrape_lky_competition(conn: sqlite3.Connection):
         "source":      "SMU",
         "url":         "https://lkygbpc.smu.edu.sg",
         "description": clean(desc_el.get_text()) if desc_el else "Asia's premier startup competition for student entrepreneurs.",
-        "deadline":    find_deadline(soup.get_text()) or "August 2025",
+        "deadline":    deadline,
         "category":    "Competition",
         "location":    "Singapore",
         "eligibility": "Students worldwide, teams of 2-5",
@@ -646,7 +682,7 @@ def scrape_eventbrite_sg(conn: sqlite3.Connection):
                 "title":       title,
                 "source":      "Eventbrite",
                 "url":         href,
-                "description": f"Event in Singapore.",
+                "description": "Event in Singapore.",
                 "deadline":    clean(date_el.get_text()) if date_el else "Check site",
                 "category":    guess_category(title),
                 "location":    "Singapore",
@@ -689,12 +725,36 @@ def scrape_mccy(conn: sqlite3.Connection):
         log(opp["title"], new)
 
 
+# ─── PURGE EXPIRED ──────────────────────────────────────────────────────────
+
+def purge_expired(conn: sqlite3.Connection):
+    """
+    Remove entries whose deadline is clearly in the past.
+    Only removes entries with a parseable year strictly less than CURRENT_YEAR.
+    Entries with 'Check site', 'Rolling', 'Ongoing', or future dates are kept.
+    """
+    print("\n[Purge expired]")
+    rows = conn.execute("SELECT id, title, deadline FROM opportunities").fetchall()
+    removed = 0
+    for row_id, title, deadline in rows:
+        if not deadline:
+            continue
+        year_match = re.search(r"\b(20\d{2})\b", deadline or "")
+        if year_match:
+            year = int(year_match.group(1))
+            if year < CURRENT_YEAR:
+                conn.execute("DELETE FROM opportunities WHERE id = ?", (row_id,))
+                print(f"  - Removed (expired {year}): {title[:60]}")
+                removed += 1
+    conn.commit()
+    print(f"    Purged {removed} expired entries")
+
+
 # ─── EXPORT ─────────────────────────────────────────────────────────────────
 
 def export_json(conn: sqlite3.Connection):
     opps = load_all(conn)
     Path("data").mkdir(exist_ok=True)
-    # Strip raw_text if it crept in from old db
     clean_opps = [{k: v for k, v in o.items() if k != "raw_text"} for o in opps]
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(clean_opps, f, indent=2, ensure_ascii=False)
@@ -735,8 +795,9 @@ def run():
             scraper(conn)
         except Exception as e:
             print(f"  !! {scraper.__name__} crashed: {e}")
-        time.sleep(1.5)  # Be polite to servers
+        time.sleep(1.5)
 
+    purge_expired(conn)
     export_json(conn)
     print("\nDone! 🎉\n")
 

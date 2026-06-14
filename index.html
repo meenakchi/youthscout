@@ -651,38 +651,29 @@ async function handleAuth() {
 // ── FIXED SIGN OUT ─────────────────────────────────────────────────────────
 async function signOut() {
   try {
-    // Clear SW cache so fresh app loads next time
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage('CLEAR_CACHE');
     }
 
-    // Sign out from Supabase
-    const { error } = await sb.auth.signOut();
-    if (error) console.warn('Supabase signOut error (non-fatal):', error.message);
-
-    // Reset all local state
-    currentUser    = null;
-    userProfile    = null;
-    allOpps        = [];
-    savedOpps      = {};
-    appliedOpps    = {};
-    appInitialized = false;
-
-    // Clear auth inputs
-    document.getElementById('auth-email').value    = '';
+    document.getElementById('main-app').style.display = 'none';
+    document.getElementById('auth-overlay').style.display = 'flex';
+    document.getElementById('auth-email').value = '';
     document.getElementById('auth-password').value = '';
     document.getElementById('auth-msg').textContent = '';
     switchAuthTab('login');
 
-    // Swap UI
-    document.getElementById('main-app').style.display    = 'none';
-    document.getElementById('auth-overlay').style.display = 'flex';
+    currentUser = null;
+    userProfile = null;
+    allOpps = [];
+    savedOpps = {};
+    appliedOpps = {};
+    appInitialized = false;
 
+    await sb.auth.signOut();
     toast('Signed out successfully');
   } catch (e) {
     console.error('Sign out error:', e);
-    // Force-show auth even if error
-    document.getElementById('main-app').style.display    = 'none';
+    document.getElementById('main-app').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
   }
 }
@@ -1015,34 +1006,36 @@ function escHtml(s) {
 
 // ── AUTH STATE ─────────────────────────────────────────────────────────────
 // FIX: use a flag so loadData() isn't called on every token refresh event
-sb.auth.onAuthStateChange(async (event, session) => {
-  console.log('[Auth]', event, session?.user?.email);
+let bootedSessionId = null;
 
-  if (event === 'SIGNED_OUT' || !session) {
-    // Only update UI if we weren't already signed out
-    if (appInitialized) {
-      appInitialized = false;
-      currentUser = null;
-      userProfile = null;
-    }
-    document.getElementById('main-app').style.display    = 'none';
+sb.auth.onAuthStateChange(async (event, session) => {
+  console.log('Auth:', event, session?.user?.email);
+
+  if (event === 'SIGNEDOUT' || !session) {
+    bootedSessionId = null;
+    currentUser = null;
+    userProfile = null;
+    document.getElementById('main-app').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
     return;
   }
 
-  // SIGNED_IN or TOKEN_REFRESHED
-  if (event === 'TOKEN_REFRESHED') return; // Don't re-init on token refresh
-
-  if (appInitialized && event !== 'SIGNED_IN') return; // Don't double-init
+  const sessionId = session.access_token || session.user?.id;
+  if (bootedSessionId === sessionId) return;
+  bootedSessionId = sessionId;
 
   currentUser = session.user;
-  appInitialized = true;
-
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
 
-  const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-  userProfile = profile;
+  const { data: profile, error } = await sb
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (error) console.error('Profile load error:', error);
+  userProfile = profile || null;
 
   document.getElementById('nav-user-info').innerHTML =
     `Hey, <strong>${escHtml(profile?.name || currentUser.email.split('@')[0])}</strong>`;
@@ -1052,16 +1045,38 @@ sb.auth.onAuthStateChange(async (event, session) => {
   initNotifState();
 
   if (!profile?.onboarded) {
-    obStep = 0; obData = { name: '', school: '', interests: [], looking_for: [] };
+    obStep = 0;
+    obData = {
+      name: profile?.name || '',
+      school: profile?.school || '',
+      interests: profile?.interests || [],
+      lookingfor: profile?.lookingfor || [],
+    };
     renderObStep();
     document.getElementById('onboarding-overlay').classList.add('visible');
   } else {
     renderPersonaBar();
+    await loadData();
   }
-  loadData();
 });
-
 document.getElementById('search').addEventListener('input', renderCards);
+
+
+window.switchAuthTab = switchAuthTab;
+window.handleAuth = handleAuth;
+window.signOut = signOut;
+window.toggleNotifications = toggleNotifications;
+window.installPWA = installPWA;
+window.dismissInstall = dismissInstall;
+window.openSavedPanel = openSavedPanel;
+window.closeSavedPanel = closeSavedPanel;
+window.switchPanelTab = switchPanelTab;
+window.exportCalendar = exportCalendar;
+window.clearPanelTab = clearPanelTab;
+window.reopenOnboarding = reopenOnboarding;
+window.obNext = obNext;
+window.obBack = obBack;
+window.closeOnboarding = closeOnboarding;
 </script>
 </body>
 </html>

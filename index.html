@@ -11,13 +11,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="YouthScout">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
-
+<link rel="apple-touch-icon" href="/Y.png">
+<link rel="icon" type="image/png" href="/Y.png">
 <!-- ── SEO ──────────────────────────────────────────────────── -->
 <meta name="description" content="Every hackathon, fellowship, and youth programme in Singapore — scraped and personalized for you.">
 <meta property="og:title" content="YouthScout SG">
 <meta property="og:description" content="Stop scrolling LinkedIn. Start applying.">
-<meta property="og:image" content="/icons/icon-512.png">
+<meta property="og:image" content="/Y.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -1005,9 +1005,6 @@ function escHtml(s) {
 }
 
 // ── AUTH STATE ─────────────────────────────────────────────────────────────
-// FIX: use a flag so loadData() isn't called on every token refresh event
-let bootedSessionId = null;
-
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('Auth:', event, session?.user?.email);
 
@@ -1020,9 +1017,12 @@ sb.auth.onAuthStateChange(async (event, session) => {
     return;
   }
 
-  const sessionId = session.access_token || session.user?.id;
-  if (bootedSessionId === sessionId) return;
-  bootedSessionId = sessionId;
+  // Only boot on actual sign-in events, not token refreshes
+  if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') return;
+
+  const userId = session.user.id;
+  if (bootedSessionId === userId) return;
+  bootedSessionId = userId;
 
   currentUser = session.user;
   document.getElementById('auth-overlay').style.display = 'none';
@@ -1050,7 +1050,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
       name: profile?.name || '',
       school: profile?.school || '',
       interests: profile?.interests || [],
-      lookingfor: profile?.lookingfor || [],
+      looking_for: profile?.looking_for || [],  // fixed key
     };
     renderObStep();
     document.getElementById('onboarding-overlay').classList.add('visible');

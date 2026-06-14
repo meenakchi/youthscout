@@ -130,8 +130,8 @@ self.addEventListener('push', (e) => {
   // Use absolute paths or verify icons exist at these locations
   const options = {
     body:       data.body    || 'New opportunities are live — check them out!',
-    icon:       data.icon    || '/icons/icon-192.png',
-    badge:      data.badge   || '/icons/badge-72.png',
+    icon:       data.icon    || '/Y.png',
+    badge:      data.badge   || '/Y.png',
     tag:        data.tag     || 'youthscout-update',
     renotify:   true,
     data:       { url: data.url || '/' },

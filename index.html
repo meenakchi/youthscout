@@ -205,11 +205,18 @@
 
 </div>
 
+<!-- REPLACE your entire <script> block with this -->
 <script>
 // ── SUPABASE ───────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://vpusuhbjrzgnbxyklllx.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_BgtS8ree6dr34tiJ1ikM0w__Or89ppF';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  }
+});
 
 const DATA_URL    = 'data/opportunities.json';
 const URGENT_DAYS = 30;
@@ -266,11 +273,12 @@ let allOpps      = [];
 let activeFilter = 'all';
 let currentUser  = null;
 let userProfile  = null;
-let savedOpps    = {};   // { oppId: opp }
-let appliedOpps  = {};   // { oppId: opp }
+let savedOpps    = {};
+let appliedOpps  = {};
 let activePanelTab = 'saved';
 let deferredInstallPrompt = null;
 let notificationsEnabled  = false;
+let appInitialized = false;  // FIX: prevent double-init
 
 let obStep = 0;
 let obData = { name: '', school: '', interests: [], looking_for: [] };
@@ -285,7 +293,7 @@ const SAMPLE_DATA = [
   { id:'s6', title:'Google Summer of Code 2026', source:'Google', url:'https://summerofcode.withgoogle.com', description:'Contribute to open source organizations over a 12-week summer program.', deadline:'April 2026', eligibility:'Students 18+, any university', category:'Bootcamp', location:'Online', date_found:'2026-06-01T00:00:00' },
   { id:'s7', title:'YMCA Youth Leadership Academy', source:'YMCA Singapore', url:'https://www.ymca.org.sg', description:'Develop your leadership potential through workshops and community projects.', deadline:'Rolling intake', eligibility:'Ages 17-25, Singapore residents', category:'Leadership', location:'Singapore', date_found:'2026-06-01T00:00:00' },
   { id:'s8', title:'Hack For Good 2026', source:'Devpost', url:'https://devpost.com', description:'48-hour hackathon focused on building tech solutions for social good.', deadline:'July 2026', eligibility:'Open to all, teams of up to 4', category:'Hackathon', location:'Singapore', date_found:'2026-06-01T00:00:00' },
-  { id:'s9', title:'AI Singapore AIAP — AI Apprenticeship Programme', source:'AI Singapore', url:'https://aisingapore.org/research/aiap/', description:'9-month applied AI programme. Build production-grade ML models with mentorship from senior AI engineers.', deadline:'Rolling intake', eligibility:'Fresh grads / career switchers with coding background', category:'Bootcamp', location:'Singapore', date_found:'2026-06-01T00:00:00' },
+  { id:'s9', title:'AI Singapore AIAP', source:'AI Singapore', url:'https://aisingapore.org/research/aiap/', description:'9-month applied AI programme. Build production-grade ML models with mentorship from senior AI engineers.', deadline:'Rolling intake', eligibility:'Fresh grads / career switchers with coding background', category:'Bootcamp', location:'Singapore', date_found:'2026-06-01T00:00:00' },
 ];
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
@@ -300,7 +308,25 @@ function toast(msg, type = '') {
 // ── PWA: Service Worker + Install ──────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => console.log('[SW] reg failed', err));
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      // Check for SW updates on every page load
+      reg.update();
+      // When a new SW is waiting, activate it immediately
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            newWorker.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+    }).catch(err => console.log('[SW] reg failed', err));
+  });
+
+  // When SW controller changes (new SW activated), reload to get fresh app
+  let swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!swRefreshing) { swRefreshing = true; window.location.reload(); }
   });
 }
 
@@ -332,27 +358,22 @@ async function toggleNotifications() {
   if (!('Notification' in window)) {
     toast('Notifications not supported on this browser', 'error'); return;
   }
-
   if (Notification.permission === 'granted' && notificationsEnabled) {
-    // Turn off
     notificationsEnabled = false;
     updateNotifBtn();
     localStorage.removeItem('ys-notif-enabled');
     toast('Notifications turned off');
     return;
   }
-
   const perm = await Notification.requestPermission();
   if (perm === 'granted') {
     notificationsEnabled = true;
     localStorage.setItem('ys-notif-enabled', '1');
     updateNotifBtn();
     toast('🕭 Notifications on — you\'ll hear about new opps!');
-    // Send a test notification
     new Notification('YouthScout SG ✦', {
       body: "You'll be notified when new opportunities drop.",
       icon: '/icons/icon-192.png',
-      badge: '/icons/badge-72.png',
     });
   } else {
     toast('Permission denied — enable in browser settings', 'error');
@@ -372,7 +393,6 @@ function initNotifState() {
   }
 }
 
-// Fire a notification when new opps appear (called after data load)
 function maybeNotifyNewOpps(opps) {
   if (!notificationsEnabled || Notification.permission !== 'granted') return;
   const lastCount = parseInt(localStorage.getItem('ys-last-count') || '0');
@@ -417,7 +437,6 @@ function toggleSave(opp, btn) {
   }
   persistLists();
   updateSavedNavBtn();
-  // Refresh card border state
   const card = btn.closest('.card');
   if (card) { card.classList.toggle('is-saved', !!savedOpps[id]); }
 }
@@ -434,7 +453,6 @@ function toggleApplied(opp, btn) {
     btn.classList.add('active');
     btn.title = 'Applied!';
     toast(' ✔︎ Marked as applied!');
-    // Also remove from saved if it was there
     if (savedOpps[id]) { delete savedOpps[id]; }
   }
   persistLists();
@@ -454,7 +472,6 @@ function updateSavedNavBtn() {
   const lbl          = document.getElementById('saved-nav-label');
   btn.classList.toggle('has-items', total > 0);
   lbl.textContent = total > 0 ? `Saved (${total})` : 'Saved';
-
   document.getElementById('saved-count-badge').textContent   = savedCount   ? ` (${savedCount})`   : '';
   document.getElementById('applied-count-badge').textContent = appliedCount ? ` (${appliedCount})` : '';
 }
@@ -483,12 +500,10 @@ function renderPanelBody() {
   const items = activePanelTab === 'saved' ? Object.values(savedOpps) : Object.values(appliedOpps);
   const label = activePanelTab === 'saved' ? 'saved' : 'applied';
   const icon  = activePanelTab === 'saved' ? '★' : '✔︎';
-
   if (!items.length) {
     body.innerHTML = `<div class="panel-empty"><div class="panel-empty-icon">${icon}</div><p>No ${label} opportunities yet.<br>Use the bookmark button on any card to save it here.</p></div>`;
     return;
   }
-
   body.innerHTML = items.map(opp => `
     <div class="panel-card">
       <div class="panel-card-title">${escHtml(opp.title)}</div>
@@ -508,7 +523,7 @@ function removePanelItem(id) {
   persistLists();
   updateSavedNavBtn();
   renderPanelBody();
-  renderCards(); // refresh card borders
+  renderCards();
 }
 
 function clearPanelTab() {
@@ -523,22 +538,18 @@ function clearPanelTab() {
 
 // ── CALENDAR EXPORT ────────────────────────────────────────────────────────
 function toICSDate(str) {
-  // Parse a deadline string and return YYYYMMDD or null
   if (!str || str === 'Check site' || str === 'Rolling' || str === 'Ongoing') return null;
   const months = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
-  // "30 Jun 2026" or "30 June 2026"
   let m = str.match(/(\d{1,2})\s+([a-z]+)\s+(20\d{2})/i);
   if (m) {
     const mn = months[m[2].slice(0,3).toLowerCase()];
     if (mn) return `${m[3]}${String(mn).padStart(2,'0')}${String(m[1]).padStart(2,'0')}`;
   }
-  // "June 2026"
   m = str.match(/([a-z]+)\s+(20\d{2})/i);
   if (m) {
     const mn = months[m[1].slice(0,3).toLowerCase()];
     if (mn) return `${m[2]}${String(mn).padStart(2,'0')}01`;
   }
-  // "August 2026"
   m = str.match(/(20\d{2})/);
   if (m) return `${m[1]}0101`;
   return null;
@@ -550,10 +561,6 @@ function buildICS(opps) {
     .filter(o => toICSDate(o.deadline))
     .map(o => {
       const d  = toICSDate(o.deadline);
-      // Set reminder 1 week before
-      const dt = new Date(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`);
-      dt.setDate(dt.getDate() - 7);
-      const alarm = dt.toISOString().replace(/[-:.]/g,'').slice(0,15) + 'Z';
       return [
         'BEGIN:VEVENT',
         `DTSTART;VALUE=DATE:${d}`,
@@ -571,9 +578,7 @@ function buildICS(opps) {
         'END:VEVENT',
       ].join('\r\n');
     });
-
   if (!events.length) return null;
-
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -628,9 +633,11 @@ async function handleAuth() {
   const msg      = document.getElementById('auth-msg');
   if (!email || !password) { msg.textContent = 'Please fill in both fields.'; return; }
   btn.disabled = true; msg.textContent = '';
+
   const { data, error } = authMode === 'login'
     ? await sb.auth.signInWithPassword({ email, password })
     : await sb.auth.signUp({ email, password });
+
   btn.disabled = false;
   if (error) { msg.textContent = error.message; return; }
   if (authMode === 'signup' && data.user && !data.session) {
@@ -638,13 +645,46 @@ async function handleAuth() {
     msg.textContent = 'Check your email to confirm your account!';
     return;
   }
+  // onAuthStateChange handles the rest
 }
 
+// ── FIXED SIGN OUT ─────────────────────────────────────────────────────────
 async function signOut() {
-  await sb.auth.signOut();
-  currentUser = null; userProfile = null;
-  document.getElementById('main-app').style.display = 'none';
-  document.getElementById('auth-overlay').style.display = 'flex';
+  try {
+    // Clear SW cache so fresh app loads next time
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage('CLEAR_CACHE');
+    }
+
+    // Sign out from Supabase
+    const { error } = await sb.auth.signOut();
+    if (error) console.warn('Supabase signOut error (non-fatal):', error.message);
+
+    // Reset all local state
+    currentUser    = null;
+    userProfile    = null;
+    allOpps        = [];
+    savedOpps      = {};
+    appliedOpps    = {};
+    appInitialized = false;
+
+    // Clear auth inputs
+    document.getElementById('auth-email').value    = '';
+    document.getElementById('auth-password').value = '';
+    document.getElementById('auth-msg').textContent = '';
+    switchAuthTab('login');
+
+    // Swap UI
+    document.getElementById('main-app').style.display    = 'none';
+    document.getElementById('auth-overlay').style.display = 'flex';
+
+    toast('Signed out successfully');
+  } catch (e) {
+    console.error('Sign out error:', e);
+    // Force-show auth even if error
+    document.getElementById('main-app').style.display    = 'none';
+    document.getElementById('auth-overlay').style.display = 'flex';
+  }
 }
 
 // ── ONBOARDING ─────────────────────────────────────────────────────────────
@@ -751,7 +791,6 @@ function scoreOpp(opp) {
 }
 
 // ── JUNK FILTER ────────────────────────────────────────────────────────────
-// Titles that are nav links / metadata, not real opportunities
 const JUNK_TITLES = new Set([
   'terms & conditions', 'terms and conditions', 'privacy statement', 'privacy policy',
   'report vulnerability', 'return to the main a*star homepage', 'home', 'back to top',
@@ -760,9 +799,9 @@ const JUNK_TITLES = new Set([
 
 function isJunk(opp) {
   const t = (opp.title || '').trim().toLowerCase();
-  if (t.length < 8 || t.length > 200) return true;                         // too short/long
-  if (JUNK_TITLES.has(t)) return true;                                       // known junk
-  if (/^(https?:\/\/|www\.)/.test(t)) return true;                          // title is a URL
+  if (t.length < 8 || t.length > 200) return true;
+  if (JUNK_TITLES.has(t)) return true;
+  if (/^(https?:\/\/|www\.)/.test(t)) return true;
   if (/^(click|read more|learn more|see more|view all)$/i.test(t)) return true;
   return false;
 }
@@ -772,12 +811,14 @@ async function loadData() {
   document.getElementById('grid').innerHTML =
     '<div class="loading"><div class="spinner"></div> Loading…</div>';
   try {
-    const resp = await fetch(DATA_URL + '?' + Date.now());
+    // Always bypass cache when fetching data
+    const resp = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const raw = await resp.json();
     if (!Array.isArray(raw) || !raw.length) throw new Error('Empty data');
     allOpps = raw.filter(o => !isJunk(o));
-  } catch {
+  } catch (err) {
+    console.warn('Data fetch failed, using sample data:', err.message);
     allOpps = SAMPLE_DATA;
   }
   maybeNotifyNewOpps(allOpps);
@@ -810,7 +851,6 @@ function buildFilters() {
   container.innerHTML = '';
   container.appendChild(makePill('All', 'all', true));
   cats.forEach(cat => container.appendChild(makePill(cat, cat, false)));
-  // Saved / Applied pills
   const sp = makePill(' ★ SAVED', 'saved', false);
   sp.classList.add('saved-pill');
   const ap = makePill(' ✔︎ APPLIED', 'applied', false);
@@ -841,10 +881,8 @@ function setFilter(val) {
 // ── FILTER + SORT ──────────────────────────────────────────────────────────
 function filtered() {
   const q = document.getElementById('search').value.toLowerCase().trim();
-
   if (activeFilter === 'saved')   return Object.values(savedOpps).filter(o => !q || matchesQuery(o, q));
   if (activeFilter === 'applied') return Object.values(appliedOpps).filter(o => !q || matchesQuery(o, q));
-
   return allOpps.filter(o => {
     if (activeFilter !== 'all' && (o.category || 'Other') !== activeFilter) return false;
     return !q || matchesQuery(o, q);
@@ -890,7 +928,6 @@ function renderCards() {
   const total = (activeFilter === 'saved' || activeFilter === 'applied') ? list.length : allOpps.length;
   document.getElementById('result-count').innerHTML =
     `<strong>${list.length}</strong> OF ${total} OPPORTUNITIES`;
-
   if (!list.length) {
     const msgs = {
       saved:   { icon: '★', title: 'NOTHING SAVED YET', sub: 'Tap the bookmark icon on any card to save it here' },
@@ -900,7 +937,6 @@ function renderCards() {
     grid.innerHTML = `<div class="empty"><div class="empty-icon">${e.icon}</div><h3>${e.title}</h3><p>${e.sub}</p></div>`;
     return;
   }
-
   grid.innerHTML = '';
   list.forEach((opp, i) => {
     const card = buildCard(opp);
@@ -914,13 +950,11 @@ function renderCards() {
 
 function buildCard(opp) {
   const c    = catColor(opp.category);
-  const card = document.createElement('div');   // div, not <a>, so action buttons don't navigate
+  const card = document.createElement('div');
   card.className = 'card';
   const deadline = opp.deadline || 'Check site';
   const isSaved   = !!savedOpps[opp.id];
   const isApplied = !!appliedOpps[opp.id];
-
-  // Status badge — show saved/applied badge instead of "FOR YOU" if applicable
   let statusBadge = '';
   if (isApplied) statusBadge = '<span class="status-badge applied">✔︎ APPLIED</span>';
   else if (isSaved) statusBadge = '<span class="status-badge saved"> ★ SAVED</span>';
@@ -958,7 +992,6 @@ function buildCard(opp) {
       </div>
     </div>`;
 
-  // Attach save/applied button handlers
   card.querySelector('.save-btn').addEventListener('click', (e) => {
     e.preventDefault(); e.stopPropagation();
     toggleSave(opp, e.currentTarget);
@@ -967,13 +1000,11 @@ function buildCard(opp) {
     e.preventDefault(); e.stopPropagation();
     toggleApplied(opp, e.currentTarget);
   });
-  // Make card body clickable (not the action buttons) to open URL
   card.addEventListener('click', (e) => {
     if (e.target.closest('.action-btn, .apply-link')) return;
     window.open(opp.url || '#', '_blank', 'noopener');
   });
   card.style.cursor = 'pointer';
-
   return card;
 }
 
@@ -983,13 +1014,30 @@ function escHtml(s) {
 }
 
 // ── AUTH STATE ─────────────────────────────────────────────────────────────
+// FIX: use a flag so loadData() isn't called on every token refresh event
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (!session) {
+  console.log('[Auth]', event, session?.user?.email);
+
+  if (event === 'SIGNED_OUT' || !session) {
+    // Only update UI if we weren't already signed out
+    if (appInitialized) {
+      appInitialized = false;
+      currentUser = null;
+      userProfile = null;
+    }
+    document.getElementById('main-app').style.display    = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
-    document.getElementById('main-app').style.display = 'none';
     return;
   }
+
+  // SIGNED_IN or TOKEN_REFRESHED
+  if (event === 'TOKEN_REFRESHED') return; // Don't re-init on token refresh
+
+  if (appInitialized && event !== 'SIGNED_IN') return; // Don't double-init
+
   currentUser = session.user;
+  appInitialized = true;
+
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('main-app').style.display = 'block';
 

@@ -9,7 +9,7 @@
     "eligibility": "Ages 17-25, Singapore residents",
     "category": "Leadership",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:49.693099"
+    "date_found": "2026-06-16T15:14:31.183781"
   },
   {
     "id": "2cc94a175904",
@@ -21,7 +21,7 @@
     "eligibility": "Fresh grads / career switchers with coding background",
     "category": "Bootcamp",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:49.683621"
+    "date_found": "2026-06-16T15:14:31.173809"
   },
   {
     "id": "0f0da1a204e0",
@@ -33,7 +33,7 @@
     "eligibility": "Singapore youths aged 15-35",
     "category": "Youth Program",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:49.673071"
+    "date_found": "2026-06-16T15:14:31.164118"
   },
   {
     "id": "c4568603ee5e",
@@ -45,7 +45,7 @@
     "eligibility": "Students worldwide, teams of 2-5",
     "category": "Competition",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:49.655244"
+    "date_found": "2026-06-16T15:14:31.152987"
   },
   {
     "id": "d1e0ebc7e080",
@@ -57,7 +57,7 @@
     "eligibility": "Penultimate/final year undergrads, min CAP 4.0",
     "category": "Internship",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:49.644311"
+    "date_found": "2026-06-16T15:14:31.142717"
   },
   {
     "id": "ed7d65a8763b",
@@ -69,7 +69,7 @@
     "eligibility": "NUS undergraduates, Year 2-3",
     "category": "Fellowship",
     "location": "Various (global)",
-    "date_found": "2026-06-13T23:05:49.629605"
+    "date_found": "2026-06-16T15:14:31.131587"
   },
   {
     "id": "c95b6d2c68b6",
@@ -81,7 +81,7 @@
     "eligibility": "Students worldwide, teams of 1-4",
     "category": "Competition",
     "location": "Online + Finals worldwide",
-    "date_found": "2026-06-13T23:05:49.613749"
+    "date_found": "2026-06-16T15:14:31.121552"
   },
   {
     "id": "92093258153c",
@@ -93,7 +93,7 @@
     "eligibility": "Students 18+, any university",
     "category": "Bootcamp",
     "location": "Online",
-    "date_found": "2026-06-13T23:05:49.606311"
+    "date_found": "2026-06-16T15:14:31.111548"
   },
   {
     "id": "33a0a3e7937e",
@@ -105,7 +105,7 @@
     "eligibility": "Fresh grads & career switchers",
     "category": "Bootcamp",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:38.293178"
+    "date_found": "2026-06-16T15:14:13.886418"
   },
   {
     "id": "277bc02be584",
@@ -117,7 +117,7 @@
     "eligibility": "Undergraduates/graduates",
     "category": "Fellowship",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:21.640793"
+    "date_found": "2026-06-16T15:13:53.728675"
   },
   {
     "id": "285c64ba5366",
@@ -129,7 +129,7 @@
     "eligibility": "Undergraduates/graduates",
     "category": "Fellowship",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:21.635591"
+    "date_found": "2026-06-16T15:13:53.721109"
   },
   {
     "id": "c1906c762f3e",
@@ -141,7 +141,7 @@
     "eligibility": "Undergraduates/graduates",
     "category": "Fellowship",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:21.631652"
+    "date_found": "2026-06-16T15:13:53.712203"
   },
   {
     "id": "4c5de33632fc",
@@ -153,6 +153,486 @@
     "eligibility": "Undergraduates/graduates",
     "category": "Fellowship",
     "location": "Singapore",
-    "date_found": "2026-06-13T23:05:21.626818"
+    "date_found": "2026-06-16T15:13:53.704136"
+  },
+  {
+    "id": "c072aab5962c",
+    "title": "Hack Days Unnao",
+    "source": "Devpost",
+    "url": "https://hack-days-unnao.devpost.com/",
+    "description": "AITD EVENTS",
+    "deadline": "Jun 20, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": " Kanpur-Lucknow Highway, Nawabganj ",
+    "date_found": "2026-06-16T15:13:32.281613"
+  },
+  {
+    "id": "1f73598a29f1",
+    "title": "1st Nature's Blueprint Ideathon 2026 !!",
+    "source": "Devpost",
+    "url": "https://naturesblueprint.devpost.com/",
+    "description": "Yaod Multifaceted Company",
+    "deadline": "Jun 30, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.273819"
+  },
+  {
+    "id": "6eafe2d4590f",
+    "title": "Far Away",
+    "source": "Devpost",
+    "url": "https://faraway.devpost.com/",
+    "description": "zuup",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online&gt;Delhi India&gt;Japan",
+    "date_found": "2026-06-16T15:13:32.267351"
+  },
+  {
+    "id": "74a088622398",
+    "title": "InnovatorsX: Startup Sprint",
+    "source": "Devpost",
+    "url": "https://innovatorsx.devpost.com/",
+    "description": "InnovatorsX",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.260338"
+  },
+  {
+    "id": "f316bba1ee15",
+    "title": "Build with Gemini",
+    "source": "Devpost",
+    "url": "https://build-with-gemini-0.devpost.com/",
+    "description": "MLH",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.253423"
+  },
+  {
+    "id": "b3c2e51bfae6",
+    "title": "Brainwave",
+    "source": "Devpost",
+    "url": "https://brainwaves.devpost.com/",
+    "description": "ACT House",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.246061"
+  },
+  {
+    "id": "17594ff3d2bf",
+    "title": "SNS Bold.ai",
+    "source": "Devpost",
+    "url": "https://sns-bold-ai.devpost.com/",
+    "description": "SNS Institutions",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Saravanampatti, Tamilnadu - 641035",
+    "date_found": "2026-06-16T15:13:32.237915"
+  },
+  {
+    "id": "09e2607e5bd1",
+    "title": "HACKFEST'26",
+    "source": "Devpost",
+    "url": "https://hackfest-26.devpost.com/",
+    "description": "Student Council",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.230863"
+  },
+  {
+    "id": "6d5caf72611e",
+    "title": "DevSoc Starlight 2026",
+    "source": "Devpost",
+    "url": "https://devsoc-starlight-2026.devpost.com/",
+    "description": "DevSoc",
+    "deadline": "Jul 10, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "UNSW Roundhouse",
+    "date_found": "2026-06-16T15:13:32.222713"
+  },
+  {
+    "id": "36c325fae1b1",
+    "title": "GenZ Can Hack 2026",
+    "source": "Devpost",
+    "url": "https://genz-can-hack-2026.devpost.com/",
+    "description": "Kids for Kids Toronto Coding Club",
+    "deadline": "Aug 22, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Toronto",
+    "date_found": "2026-06-16T15:13:32.216688"
+  },
+  {
+    "id": "343a08277b2e",
+    "title": "GLITCHED GAMES",
+    "source": "Devpost",
+    "url": "https://glitch-to-win-games.devpost.com/",
+    "description": "GB3-Productions",
+    "deadline": "Jun 30, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.210093"
+  },
+  {
+    "id": "37b80e18e868",
+    "title": "Moonshot Hackathon",
+    "source": "Devpost",
+    "url": "https://moonshot-aethra.devpost.com/",
+    "description": "Aethra",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.203478"
+  },
+  {
+    "id": "776f443f2798",
+    "title": "Built with Python Hackathon",
+    "source": "Devpost",
+    "url": "https://built-with-python-hackathon.devpost.com/",
+    "description": "CS4Everyone",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.196317"
+  },
+  {
+    "id": "a12c6a3d4759",
+    "title": "Assistive Innovation Challenge 2026",
+    "source": "Devpost",
+    "url": "https://assistive-innovation-challenge.devpost.com/",
+    "description": "Student Innovators Without Borders",
+    "deadline": "Aug 01, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.189436"
+  },
+  {
+    "id": "caf1427d1e58",
+    "title": "VoltHacks",
+    "source": "Devpost",
+    "url": "https://volthacks.devpost.com/",
+    "description": "Dialogate",
+    "deadline": "Sep 05, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.182810"
+  },
+  {
+    "id": "6af4a08177b5",
+    "title": "Agentic AI Build Week 2026",
+    "source": "Devpost",
+    "url": "https://agentic-ai-build-week-2026.devpost.com/",
+    "description": "GenAI Fund",
+    "deadline": "Jul 12, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Nova Gallery",
+    "date_found": "2026-06-16T15:13:32.176590"
+  },
+  {
+    "id": "5b1fefd2ff1e",
+    "title": "CodeStorm",
+    "source": "Devpost",
+    "url": "https://codestorm.devpost.com/",
+    "description": "Arya College Old Campus",
+    "deadline": "Jun 21, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.169151"
+  },
+  {
+    "id": "376d8e212c31",
+    "title": "Kaya AI IIT India Hackathon 2026",
+    "source": "Devpost",
+    "url": "https://kaya-ai-iit-hackathon-2026.devpost.com/",
+    "description": "Kaya",
+    "deadline": "Jul 10, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.162113"
+  },
+  {
+    "id": "d44236c5841f",
+    "title": "Global Tech Innovation 2026",
+    "source": "Devpost",
+    "url": "https://global-tech-innovation-2026.devpost.com/",
+    "description": "Innovation Hacks",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.154947"
+  },
+  {
+    "id": "d661364803b9",
+    "title": "AI for Civic Innovation Hackathon",
+    "source": "Devpost",
+    "url": "https://ai-for-civic-innovation.devpost.com/",
+    "description": "Code for Pakistan",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "FAST NUCES, Islamabad Campus",
+    "date_found": "2026-06-16T15:13:32.147333"
+  },
+  {
+    "id": "a152d6c53359",
+    "title": "FutureAI Global Hackathon 2026",
+    "source": "Devpost",
+    "url": "https://futureai-global-hackthon.devpost.com/",
+    "description": "Innovation Hacks",
+    "deadline": "Jul 05, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.138923"
+  },
+  {
+    "id": "5276c210f62b",
+    "title": "Play with Purpose Hackathon presented by Cox Enterprises",
+    "source": "Devpost",
+    "url": "https://play-with-purpose-hackathon.devpost.com/",
+    "description": "Cox Enterprises",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "The Biltmore Innovation Center",
+    "date_found": "2026-06-16T15:13:32.132084"
+  },
+  {
+    "id": "acc43a2dc440",
+    "title": "Databricks Apps & Agents for Good Hackathon 2026",
+    "source": "Devpost",
+    "url": "https://dais-for-good-2026.devpost.com/",
+    "description": "Databricks",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "San Francisco",
+    "date_found": "2026-06-16T15:13:32.125957"
+  },
+  {
+    "id": "ba6dae0ddb5d",
+    "title": "Hoobit Hacks 2026",
+    "source": "Devpost",
+    "url": "https://hoobit-hacks-2026.devpost.com/",
+    "description": "Hoobit",
+    "deadline": "Jul 18, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.118620"
+  },
+  {
+    "id": "1808acac42b6",
+    "title": "Build the Future with AI — From Code to No-Code",
+    "source": "Devpost",
+    "url": "https://build-the-future-with-ai.devpost.com/",
+    "description": "Innovation Hacks",
+    "deadline": "Jun 30, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.110729"
+  },
+  {
+    "id": "2b471860af71",
+    "title": "NACOS X GDG AI Hackathon",
+    "source": "Devpost",
+    "url": "https://nacos-x-gdg-ai-hackathon.devpost.com/",
+    "description": "Google Developer Group LMU",
+    "deadline": "Jun 30, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.102765"
+  },
+  {
+    "id": "b0f4a1fca1dc",
+    "title": "Github readme generation",
+    "source": "Devpost",
+    "url": "https://github-readme-generation.devpost.com/",
+    "description": "presentme",
+    "deadline": "Jul 06, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.095555"
+  },
+  {
+    "id": "54a288ac6fbe",
+    "title": "PhysTech 2026: Physical Activity and Technology Hack Day",
+    "source": "Devpost",
+    "url": "https://phystech-2026.devpost.com/",
+    "description": "Binnovative",
+    "deadline": "Jun 27, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.087012"
+  },
+  {
+    "id": "2c1916c49abd",
+    "title": "Creator Colosseum Startup Competition: Student Founders. Real Startups.",
+    "source": "Devpost",
+    "url": "https://creatorcolosseum.devpost.com/",
+    "description": "Creator Colosseum",
+    "deadline": "Jun 30, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.078748"
+  },
+  {
+    "id": "bcae9dc5bff6",
+    "title": "Arm Create: AI Optimization Challenge",
+    "source": "Devpost",
+    "url": "https://arm-ai-optimization-challenge.devpost.com/",
+    "description": "arm",
+    "deadline": "Aug 14, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.069348"
+  },
+  {
+    "id": "915ee7f0929f",
+    "title": "LUMA Hackathon (July 3rd - 10th)",
+    "source": "Devpost",
+    "url": "https://luma-hackathon-500.devpost.com/",
+    "description": "LUMA",
+    "deadline": "Jul 10, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.059823"
+  },
+  {
+    "id": "bdccddd865e0",
+    "title": "NextGenHacks",
+    "source": "Devpost",
+    "url": "https://nextgenhacks.devpost.com/",
+    "description": "NextGenHacks",
+    "deadline": "Jun 19, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.053825"
+  },
+  {
+    "id": "760926964de4",
+    "title": "GitLab Transcend Hackathon",
+    "source": "Devpost",
+    "url": "https://gitlab-transcend.devpost.com/",
+    "description": "GitLab",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.045215"
+  },
+  {
+    "id": "6e0ae91fb2b0",
+    "title": "Mind the Product presents World Product Day: Everyone Ships Now",
+    "source": "Devpost",
+    "url": "https://mindtheproduct.devpost.com/",
+    "description": "Mind the Product",
+    "deadline": "Jun 20, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.036125"
+  },
+  {
+    "id": "ca774ec60e17",
+    "title": "Slack Agent Builder Challenge",
+    "source": "Devpost",
+    "url": "https://slackhack.devpost.com/",
+    "description": "Salesforce",
+    "deadline": "Jul 13, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.028510"
+  },
+  {
+    "id": "356a9a9e8693",
+    "title": "UiPath AgentHack",
+    "source": "Devpost",
+    "url": "https://uipath-agenthack.devpost.com/",
+    "description": "UiPath",
+    "deadline": "Jun 29, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.017447"
+  },
+  {
+    "id": "e4faf979d3e1",
+    "title": "Global AI Hackathon Series with Qwen Cloud",
+    "source": "Devpost",
+    "url": "https://qwencloud-hackathon.devpost.com/",
+    "description": "Alibaba Cloud",
+    "deadline": "Jul 09, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.009080"
+  },
+  {
+    "id": "08f95477c4fd",
+    "title": "USAII® Global AI Hackathon 2026",
+    "source": "Devpost",
+    "url": "https://usaii-global-ai-hackathon-2026.devpost.com/",
+    "description": "USAII",
+    "deadline": "Check site",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:32.000338"
+  },
+  {
+    "id": "86076b50c6cf",
+    "title": "H0: Hack the Zero Stack with Vercel v0 and AWS Databases",
+    "source": "Devpost",
+    "url": "https://h01.devpost.com/",
+    "description": "Amazon",
+    "deadline": "Jun 29, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:31.991327"
+  },
+  {
+    "id": "91bf12521316",
+    "title": "Build with Gemini XPRIZE",
+    "source": "Devpost",
+    "url": "https://xprize.devpost.com/",
+    "description": "XPRIZE",
+    "deadline": "Aug 17, 2026",
+    "eligibility": "Open to all",
+    "category": "Hackathon",
+    "location": "Online",
+    "date_found": "2026-06-16T15:13:31.983107"
   }
 ]

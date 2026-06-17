@@ -13,11 +13,13 @@ import hashlib
 import sqlite3
 import re
 import os
+import random
 from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 try:
     import feedparser
@@ -41,6 +43,13 @@ HEADERS = {
         "Chrome/124.0.0.0 Safari/537.36"
     ),
     "Accept-Language": "en-US,en;q=0.9",
+}
+
+DEVPOST_API_HEADERS = {
+    **HEADERS,
+    "Accept": "application/json, text/javascript, */*; q=0.01",
+    "X-Requested-With": "XMLHttpRequest",
+    "Referer": "https://devpost.com/hackathons",
 }
 
 CURRENT_YEAR = datetime.now().year
@@ -167,13 +176,20 @@ def get(url: str, timeout: int = 15, retries: int = 2) -> requests.Response | No
             r.raise_for_status()
             return r
         except requests.exceptions.HTTPError as e:
-            if e.response is not None and e.response.status_code in (403, 404, 410):
+            status = e.response.status_code if e.response is not None else None
+            if status in (403, 404, 410):
                 return None  # Don't retry permanent errors
-            if attempt < retries:
-                time.sleep(2 ** attempt)
+            if status in (429, 503, 524, 522):
+                wait = 5 + random.random() + attempt * 2
+                print(f"    Rate limited ({status}) on {url[:60]}, sleeping {wait:.1f}s")
+                time.sleep(wait)
+            elif attempt < retries:
+                time.sleep(2 ** attempt + random.random())
+            else:
+                print(f"    HTTP error {status} for {url[:60]}")
         except Exception as e:
             if attempt < retries:
-                time.sleep(2 ** attempt)
+                time.sleep(2 ** attempt + random.random())
             else:
                 print(f"    GET failed ({url[:60]}): {e}")
     return None
@@ -306,70 +322,73 @@ def scrape_rss(conn: sqlite3.Connection, feed_url: str, source: str,
 
 def scrape_devpost(conn: sqlite3.Connection):
     """
-    Devpost JSON API — actual structured data, no HTML parsing needed.
+    Devpost API scraper using the public hackathons endpoint.
     """
     print("\n[Devpost]")
-    # Devpost has an undocumented JSON endpoint used by their own frontend
-    url = "https://devpost.com/hackathons.json?challenge_type=all&sort_by=Deadline&open_to[]=public&page=1"
-    r = get(url)
-    if not r:
-        # Fallback to HTML scraping
-        r = get("https://devpost.com/hackathons?challenge_type=all&sort_by=Deadline&open_to[]=public")
-        if not r:
-            return
-        soup = BeautifulSoup(r.text, "html.parser")
-        for card in soup.select(".challenge-listing")[:30]:
-            title_el = card.select_one("h2, h3, .challenge-title")
-            link_el  = card.select_one("a[href]")
-            if not title_el or not link_el:
-                continue
-            href = link_el["href"]
-            if not href.startswith("http"):
-                href = "https://devpost.com" + href
-            desc_el = card.select_one(".challenge-description, p")
-            raw = card.get_text()
-            opp = {
-                "title":       clean(title_el.get_text()),
-                "source":      "Devpost",
-                "url":         href,
-                "description": clean(desc_el.get_text()) if desc_el else "",
-                "deadline":    find_deadline(raw),
-                "category":    "Hackathon",
-                "location":    "Online",
-                "eligibility": "Open to all",
-            }
-            new = save(conn, opp)
-            log(opp["title"], new)
-        return
-
+    api_url = "https://devpost.com/api/hackathons?search=&page=1&per_page=50"
     try:
+        r = requests.get(api_url, headers=DEVPOST_API_HEADERS, timeout=20)
+        if r.status_code != 200:
+            raise ValueError(f"status {r.status_code}")
         data = r.json()
         hackathons = data.get("hackathons", [])
-        for h in hackathons[:30]:
-            title = clean(h.get("title", ""))
-            url   = h.get("url", "")
-            if not title or not url:
-                continue
-            # Devpost gives submission_period_dates like "Jun 01 – Jul 31, 2026"
-            deadline_raw = h.get("submission_period_dates", "") or ""
-            # Take the end date (after "–" or "-")
-            if "–" in deadline_raw or "-" in deadline_raw:
-                deadline_raw = re.split(r"[–-]", deadline_raw)[-1].strip()
-            opp = {
-                "title":       title,
-                "source":      "Devpost",
-                "url":         url if url.startswith("http") else "https://devpost.com" + url,
-                "description": clean(h.get("displayed_location", {}).get("location", "") or
-                                     h.get("tagline", "") or "Hackathon on Devpost."),
-                "deadline":    find_deadline(deadline_raw) if deadline_raw else "Check site",
-                "category":    "Hackathon",
-                "location":    h.get("displayed_location", {}).get("location", "Online") or "Online",
-                "eligibility": "Open to all",
-            }
-            new = save(conn, opp)
-            log(opp["title"], new)
     except Exception as e:
-        print(f"    JSON parse error: {e}")
+        print(f"    Devpost API failed: {e}")
+        print("    Trying Playwright fallback (install browsers with 'python -m playwright install chromium')")
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.goto("https://devpost.com/hackathons", timeout=30000)
+                page.wait_for_load_state("networkidle", timeout=30000)
+                for hackathon in page.locator(".challenge-listing").all():
+                    title = (hackathon.locator("h3.title, h2.title").text_content() or "").strip()
+                    link = hackathon.locator("a").first.get_attribute("href") or ""
+                    if not title or not link:
+                        continue
+                    if link.startswith("/"):
+                        link = "https://devpost.com" + link
+                    elif not link.startswith("http"):
+                        link = "https://devpost.com/" + link.lstrip("/")
+                    opp = {
+                        "title":       title,
+                        "source":      "Devpost",
+                        "url":         link,
+                        "description": "Hackathon listing from Devpost.",
+                        "deadline":    find_deadline(hackathon.text_content() or ""),
+                        "category":    "Hackathon",
+                        "location":    "Online",
+                        "eligibility": "Open to all",
+                    }
+                    new = save(conn, opp)
+                    log(opp["title"], new)
+            browser.close()
+        except Exception as e:
+            print(f"    Playwright Devpost fallback failed: {e}")
+        return
+
+    for h in hackathons[:50]:
+        title = clean(h.get("title", ""))
+        url = h.get("url", "")
+        if url and not url.startswith("http"):
+            url = "https://devpost.com" + url
+        if not title or not url:
+            continue
+        deadline_raw = h.get("submission_period_dates", "") or h.get("time_left_to_submission", "") or ""
+        if "–" in deadline_raw or "-" in deadline_raw:
+            deadline_raw = re.split(r"[–-]", deadline_raw)[-1].strip()
+        opp = {
+            "title":       title,
+            "source":      "Devpost",
+            "url":         url,
+            "description": clean(h.get("tagline", "") or h.get("organization_name", "") or "Hackathon on Devpost."),
+            "deadline":    find_deadline(deadline_raw) if deadline_raw else "Check site",
+            "category":    "Hackathon",
+            "location":    h.get("displayed_location", {}).get("location", "Online") or "Online",
+            "eligibility": "Open to all",
+        }
+        new = save(conn, opp)
+        log(opp["title"], new)
 
 
 def scrape_mlh(conn: sqlite3.Connection):
@@ -976,7 +995,7 @@ def run():
             scraper(conn)
         except Exception as e:
             print(f"  !! {scraper.__name__} crashed: {e}")
-        time.sleep(1.5)
+        time.sleep(1.5 + random.random())
 
     purge_expired(conn)
 

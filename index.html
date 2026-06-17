@@ -192,8 +192,33 @@
       </select>
     </div>
 
-    <div class="grid" id="grid">
+    <!-- ── SWIPE DECK ─────────────────────────────────────────── -->
+    <div class="swipe-hint" id="swipe-hint">
+      <span class="hint-item hint-left">← Skip</span>
+      <span class="hint-item hint-up">↑ Applied</span>
+      <span class="hint-item hint-right">Save ★ →</span>
+    </div>
+
+    <div class="swipe-deck" id="grid">
       <div class="loading"><div class="spinner"></div> Loading opportunities…</div>
+    </div>
+
+    <!-- ── SWIPE ACTION BUTTONS ───────────────────────────────── -->
+    <div class="swipe-actions" id="swipe-actions" style="display:none">
+      <button class="swipe-btn swipe-btn-skip"    id="btn-skip"    onclick="swipeCard('left')"  title="Skip">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <button class="swipe-btn swipe-btn-applied" id="btn-applied" onclick="swipeCard('up')"    title="Mark Applied">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+      <button class="swipe-btn swipe-btn-save"    id="btn-save"    onclick="swipeCard('right')" title="Save">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      </button>
+    </div>
+
+    <!-- ── SWIPE PROGRESS ─────────────────────────────────────── -->
+    <div class="swipe-progress" id="swipe-progress" style="display:none">
+      <div class="swipe-progress-bar" id="swipe-progress-bar"></div>
     </div>
   </div>
 
@@ -205,7 +230,403 @@
 
 </div>
 
-<!-- REPLACE your entire <script> block with this -->
+<style>
+/* ── SWIPE DECK LAYOUT ──────────────────────────────────────────────────── */
+.swipe-deck {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  height: 520px;
+  touch-action: none;
+}
+
+@media (max-width: 600px) {
+  .swipe-deck { height: 480px; }
+}
+
+/* ── SWIPE HINT ─────────────────────────────────────────────────────────── */
+.swipe-hint {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  opacity: 0.75;
+  letter-spacing: 0.08em;
+}
+.hint-left  { color: #e74c3c; }
+.hint-up    { color: var(--applied-color); }
+.hint-right { color: var(--pink); }
+
+/* ── STACKED CARDS ──────────────────────────────────────────────────────── */
+.card {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 24px 48px rgba(0,0,0,0.12), 0 6px 20px rgba(0,0,0,0.08);
+  padding: 30px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform, opacity;
+  transform-origin: center bottom;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.card:hover { box-shadow: 0 26px 58px rgba(0,0,0,0.14), 0 8px 26px rgba(0,0,0,0.1); }
+.card:active { cursor: grabbing; }
+
+/* Back cards peek through */
+.card[data-depth="1"] {
+  transform: translateY(10px) scale(0.97);
+  z-index: 1;
+  pointer-events: none;
+  filter: brightness(0.97);
+}
+.card[data-depth="2"] {
+  transform: translateY(20px) scale(0.94);
+  z-index: 0;
+  pointer-events: none;
+  filter: brightness(0.94);
+}
+.card[data-depth="0"] {
+  z-index: 2;
+  transform: translateY(0) scale(1);
+}
+
+/* ── SWIPE FEEDBACK OVERLAYS ────────────────────────────────────────────── */
+.card .swipe-label {
+  position: absolute;
+  top: 28px;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 6px 18px;
+  border-radius: 10px;
+  border-width: 3px;
+  border-style: solid;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.05s;
+  z-index: 10;
+}
+.card .swipe-label-save {
+  right: 24px;
+  color: #ff2d78;
+  border-color: #ff2d78;
+  background: rgba(255,45,120,0.08);
+  transform: rotate(8deg);
+}
+.card .swipe-label-skip {
+  left: 24px;
+  color: #e74c3c;
+  border-color: #e74c3c;
+  background: rgba(231,76,60,0.08);
+  transform: rotate(-8deg);
+}
+.card .swipe-label-applied {
+  left: 50%;
+  top: 28px;
+  transform: translateX(-50%) rotate(-4deg);
+  color: #00c896;
+  border-color: #00c896;
+  background: rgba(0,200,150,0.08);
+}
+
+/* ── CARD INTERNALS (same visual as before, just adapted for flex column) ── */
+.card-stripe {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: 20px 20px 0 0;
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1.5px solid;
+}
+.cat-badge .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.card-source {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.5;
+  letter-spacing: 0.02em;
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+  color: var(--text, #111);
+}
+
+.card-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  opacity: 0.72;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  margin-bottom: 12px;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+.meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--dark);
+  background: rgba(255,45,120,0.06);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.meta-chip svg { width: 11px; height: 11px; opacity: 0.75; }
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--dark);
+  opacity: 0.78;
+}
+.deadline svg { width: 13px; height: 13px; }
+.deadline.urgent { color: #e74c3c; opacity: 1; }
+
+.apply-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ff2d78;
+  text-decoration: none;
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1.5px solid #ff2d78;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.apply-link:hover { background: #ff2d78; color: #fff; }
+.apply-link svg { width: 13px; height: 13px; }
+
+/* Status badges on card */
+.status-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 3px 9px;
+  border-radius: 20px;
+  z-index: 5;
+}
+.status-badge.saved   { background: rgba(255,45,120,0.12); color: #ff2d78; }
+.status-badge.applied { background: rgba(0,200,150,0.12);  color: #00c896; }
+
+/* ── SWIPE ACTION BUTTONS ───────────────────────────────────────────────── */
+.swipe-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.swipe-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 2px solid rgba(29,29,29,0.14);
+  background: #fff;
+  color: var(--dark);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.17s ease, box-shadow 0.17s ease, background 0.17s, color 0.17s;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.09);
+}
+.swipe-btn svg { width: 22px; height: 22px; transition: stroke 0.15s; }
+
+.swipe-btn:hover { transform: scale(1.08); box-shadow: 0 12px 24px rgba(0,0,0,0.14); }
+.swipe-btn:active { transform: scale(0.96); }
+
+.swipe-btn-skip    { border-color: #e74c3c; color: #e74c3c; }
+.swipe-btn-skip:hover    { background: #e74c3c; color: #fff; }
+.swipe-btn-skip:hover svg { stroke: #fff; }
+
+.swipe-btn-applied { border-color: var(--applied-color); color: var(--applied-color); width: 58px; height: 58px; }
+.swipe-btn-applied:hover { background: var(--applied-color); color: #fff; }
+.swipe-btn-applied:hover svg { stroke: #fff; }
+
+.swipe-btn-save    { border-color: var(--pink); color: var(--pink); }
+.swipe-btn-save:hover    { background: var(--pink); color: #fff; }
+.swipe-btn-save:hover svg { stroke: #fff; }
+
+/* ── PROGRESS BAR ───────────────────────────────────────────────────────── */
+.swipe-progress {
+  max-width: 560px;
+  margin: 14px auto 0;
+  height: 3px;
+  background: rgba(0,0,0,0.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.swipe-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ff2d78, #7b5cf0);
+  border-radius: 99px;
+  transition: width 0.35s ease;
+  width: 0%;
+}
+
+/* ── FLY-OUT ANIMATIONS ─────────────────────────────────────────────────── */
+@keyframes flyRight {
+  to { transform: translateX(140%) rotate(25deg); opacity: 0; }
+}
+@keyframes flyLeft {
+  to { transform: translateX(-140%) rotate(-25deg); opacity: 0; }
+}
+@keyframes flyUp {
+  to { transform: translateY(-140%) scale(0.8); opacity: 0; }
+}
+
+.card.flying-right { animation: flyRight 0.38s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
+.card.flying-left  { animation: flyLeft  0.38s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
+.card.flying-up    { animation: flyUp    0.32s cubic-bezier(0.4, 0, 1, 1) forwards; pointer-events: none; }
+
+/* ── BACK-CARD PROMOTE ANIMATION ────────────────────────────────────────── */
+@keyframes promoteCard1 {
+  from { transform: translateY(10px) scale(0.97); }
+  to   { transform: translateY(0)    scale(1);    }
+}
+@keyframes promoteCard2 {
+  from { transform: translateY(20px) scale(0.94); }
+  to   { transform: translateY(10px) scale(0.97); }
+}
+.card.promoting-0 { animation: promoteCard1 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.card.promoting-1 { animation: promoteCard2 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* ── EMPTY STATE ────────────────────────────────────────────────────────── */
+.swipe-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  text-align: center;
+}
+.swipe-empty-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.swipe-empty h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+.swipe-empty p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  opacity: 0.6;
+  margin: 0;
+  max-width: 280px;
+}
+.swipe-empty-restart {
+  margin-top: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ff2d78;
+  background: none;
+  border: 1.5px solid #ff2d78;
+  border-radius: 20px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.swipe-empty-restart:hover { background: #ff2d78; color: #fff; }
+
+/* ── DARK MODE TWEAKS ────────────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .card { background: #1a1a2e; border-color: rgba(255,255,255,0.08); }
+  .card-footer { border-top-color: rgba(255,255,255,0.08); }
+  .meta-chip { background: rgba(255,255,255,0.06); }
+  .swipe-btn { background: #1a1a2e; }
+}
+</style>
+
 <script>
 // ── SUPABASE ───────────────────────────────────────────────────────────────
 const SUPABASE_URL  = 'https://vpusuhbjrzgnbxyklllx.supabase.co';
@@ -278,10 +699,17 @@ let appliedOpps  = {};
 let activePanelTab = 'saved';
 let deferredInstallPrompt = null;
 let notificationsEnabled  = false;
-let appInitialized = false;  // FIX: prevent double-init
+let appInitialized = false;
 
 let obStep = 0;
 let obData = { name: '', school: '', interests: [], looking_for: [] };
+
+// ── SWIPE STATE ────────────────────────────────────────────────────────────
+let swipeQueue   = [];   // ordered list of opps to swipe through
+let swipeIndex   = 0;    // index of current top card
+let isDragging   = false;
+let startX = 0, startY = 0, currentX = 0, currentY = 0;
+let topCardEl    = null;
 
 // ── SAMPLE DATA ────────────────────────────────────────────────────────────
 const SAMPLE_DATA = [
@@ -309,9 +737,7 @@ function toast(msg, type = '') {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(reg => {
-      // Check for SW updates on every page load
       reg.update();
-      // When a new SW is waiting, activate it immediately
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         newWorker.addEventListener('statechange', () => {
@@ -323,7 +749,6 @@ if ('serviceWorker' in navigator) {
     }).catch(err => console.log('[SW] reg failed', err));
   });
 
-  // When SW controller changes (new SW activated), reload to get fresh app
   let swRefreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     if (!swRefreshing) { swRefreshing = true; window.location.reload(); }
@@ -645,7 +1070,6 @@ async function handleAuth() {
     msg.textContent = 'Check your email to confirm your account!';
     return;
   }
-  // onAuthStateChange handles the rest
 }
 
 // ── FIXED SIGN OUT ─────────────────────────────────────────────────────────
@@ -801,8 +1225,9 @@ function isJunk(opp) {
 async function loadData() {
   document.getElementById('grid').innerHTML =
     '<div class="loading"><div class="spinner"></div> Loading…</div>';
+  document.getElementById('swipe-actions').style.display = 'none';
+  document.getElementById('swipe-progress').style.display = 'none';
   try {
-    // Always bypass cache when fetching data
     const resp = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const raw = await resp.json();
@@ -912,90 +1337,305 @@ function isUrgentDeadline(str) {
   return msLeft > 0 && msLeft <= URGENT_DAYS * 86_400_000;
 }
 
-// ── RENDER CARDS ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+// ── TINDER SWIPE ENGINE ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+
 function renderCards() {
   const grid = document.getElementById('grid');
   const list = sorted(filtered());
   const total = (activeFilter === 'saved' || activeFilter === 'applied') ? list.length : allOpps.length;
+
   document.getElementById('result-count').innerHTML =
     `<strong>${list.length}</strong> OF ${total} OPPORTUNITIES`;
+
+  // Reset swipe state
+  swipeQueue = list;
+  swipeIndex = 0;
+  detachDragListeners();
+
   if (!list.length) {
     const msgs = {
-      saved:   { icon: '★', title: 'NOTHING SAVED YET', sub: 'Tap the bookmark icon on any card to save it here' },
-      applied: { icon: '✔︎', title: 'NO APPLIED OPPS YET', sub: 'Mark opportunities as applied to track your progress' },
+      saved:   { icon: '★', title: 'NOTHING SAVED YET', sub: 'Swipe right on any card to save it here' },
+      applied: { icon: '✔︎', title: 'NO APPLIED OPPS YET', sub: 'Swipe up on a card to mark it as applied' },
     };
     const e = msgs[activeFilter] || { icon: '🔍', title: 'NOTHING HERE YET', sub: 'Try a different search or category' };
-    grid.innerHTML = `<div class="empty"><div class="empty-icon">${e.icon}</div><h3>${e.title}</h3><p>${e.sub}</p></div>`;
+    grid.innerHTML = `<div class="swipe-empty"><div class="swipe-empty-icon">${e.icon}</div><h3>${e.title}</h3><p>${e.sub}</p></div>`;
+    document.getElementById('swipe-actions').style.display  = 'none';
+    document.getElementById('swipe-progress').style.display = 'none';
+    document.getElementById('swipe-hint').style.display = 'none';
     return;
   }
-  grid.innerHTML = '';
-  list.forEach((opp, i) => {
-    const card = buildCard(opp);
-    if (scoreOpp(opp) >= 2 && !savedOpps[opp.id] && !appliedOpps[opp.id]) card.classList.add('boosted');
-    if (savedOpps[opp.id])   card.classList.add('is-saved');
-    if (appliedOpps[opp.id]) card.classList.add('is-applied');
-    card.style.animationDelay = Math.min(i * 35, 350) + 'ms';
-    grid.appendChild(card);
-  });
+
+  document.getElementById('swipe-hint').style.display = '';
+  document.getElementById('swipe-actions').style.display  = 'flex';
+  document.getElementById('swipe-progress').style.display = '';
+  renderDeck();
 }
 
+function renderDeck() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  // Render top 3 cards (top card + 2 behind)
+  const remaining = swipeQueue.slice(swipeIndex);
+  if (!remaining.length) {
+    showSwipeEmpty();
+    return;
+  }
+
+  // Render from back to front so z-index works
+  const toRender = remaining.slice(0, 3).reverse();
+  toRender.forEach((opp, ri) => {
+    const depth = (toRender.length - 1) - ri; // 0 = top
+    const card = buildCard(opp);
+    card.dataset.depth = depth;
+    card.dataset.id = opp.id;
+    grid.appendChild(card);
+  });
+
+  // Attach drag to top card
+  topCardEl = grid.querySelector('.card[data-depth="0"]');
+  if (topCardEl) attachDragListeners(topCardEl);
+
+  updateProgress();
+}
+
+function showSwipeEmpty() {
+  const grid = document.getElementById('grid');
+  const total = swipeQueue.length;
+  const savedCount   = Object.keys(savedOpps).length;
+  const appliedCount = Object.keys(appliedOpps).length;
+  grid.innerHTML = `
+    <div class="swipe-empty">
+      <div class="swipe-empty-icon">✦</div>
+      <h3>YOU'VE SEEN IT ALL</h3>
+      <p>You went through all ${total} opportunities.<br>${savedCount} saved · ${appliedCount} applied</p>
+      <button class="swipe-empty-restart" onclick="restartSwipe()">Start over</button>
+    </div>`;
+  document.getElementById('swipe-actions').style.display  = 'none';
+  document.getElementById('swipe-hint').style.display = 'none';
+}
+
+function restartSwipe() {
+  swipeIndex = 0;
+  document.getElementById('swipe-actions').style.display = 'flex';
+  document.getElementById('swipe-hint').style.display = '';
+  renderDeck();
+}
+
+function updateProgress() {
+  const total     = swipeQueue.length;
+  const done      = swipeIndex;
+  const pct       = total > 0 ? (done / total) * 100 : 0;
+  const bar       = document.getElementById('swipe-progress-bar');
+  if (bar) bar.style.width = pct + '%';
+  document.getElementById('result-count').innerHTML =
+    `<strong>${total - done}</strong> OF ${total} REMAINING`;
+}
+
+// ── PROGRAMMATIC SWIPE (button click) ─────────────────────────────────────
+function swipeCard(direction) {
+  if (!topCardEl || topCardEl.classList.contains('flying-right') ||
+      topCardEl.classList.contains('flying-left') ||
+      topCardEl.classList.contains('flying-up')) return;
+
+  const opp = swipeQueue[swipeIndex];
+  if (!opp) return;
+
+  // Flash label
+  const labelClass = direction === 'right' ? 'swipe-label-save'
+                   : direction === 'left'  ? 'swipe-label-skip'
+                                            : 'swipe-label-applied';
+  const labelEl = topCardEl.querySelector('.' + labelClass);
+  if (labelEl) labelEl.style.opacity = '1';
+
+  // Animate out
+  const flyClass = direction === 'right' ? 'flying-right'
+                 : direction === 'left'  ? 'flying-left'
+                                         : 'flying-up';
+  topCardEl.classList.add(flyClass);
+
+  // Apply action
+  if (direction === 'right' && !savedOpps[opp.id] && !appliedOpps[opp.id]) {
+    savedOpps[opp.id] = opp;
+    persistLists();
+    updateSavedNavBtn();
+    toast(' ★ Saved!');
+  } else if (direction === 'up') {
+    appliedOpps[opp.id] = opp;
+    if (savedOpps[opp.id]) delete savedOpps[opp.id];
+    persistLists();
+    updateSavedNavBtn();
+    toast(' ✔︎ Marked as applied!');
+  }
+
+  // Promote back cards & advance
+  detachDragListeners();
+  const backCards = document.querySelectorAll('.card[data-depth="1"], .card[data-depth="2"]');
+  backCards.forEach(c => {
+    const newDepth = parseInt(c.dataset.depth) - 1;
+    c.classList.add(`promoting-${newDepth}`);
+  });
+
+  setTimeout(() => {
+    swipeIndex++;
+    renderDeck();
+  }, 380);
+}
+
+// ── DRAG / TOUCH LISTENERS ─────────────────────────────────────────────────
+function attachDragListeners(el) {
+  el.addEventListener('mousedown',  onDragStart, { passive: false });
+  el.addEventListener('touchstart', onDragStart, { passive: false });
+}
+
+function detachDragListeners() {
+  if (!topCardEl) return;
+  topCardEl.removeEventListener('mousedown',  onDragStart);
+  topCardEl.removeEventListener('touchstart', onDragStart);
+  document.removeEventListener('mousemove',  onDragMove);
+  document.removeEventListener('mouseup',    onDragEnd);
+  document.removeEventListener('touchmove',  onDragMove);
+  document.removeEventListener('touchend',   onDragEnd);
+}
+
+function getXY(e) {
+  if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  return { x: e.clientX, y: e.clientY };
+}
+
+function onDragStart(e) {
+  // Don't hijack clicks on buttons or links
+  if (e.target.closest('.action-btn, .apply-link, button, a')) return;
+  isDragging = true;
+  const { x, y } = getXY(e);
+  startX = x; startY = y; currentX = x; currentY = y;
+  topCardEl.style.transition = 'none';
+  document.addEventListener('mousemove',  onDragMove, { passive: false });
+  document.addEventListener('mouseup',    onDragEnd);
+  document.addEventListener('touchmove',  onDragMove, { passive: false });
+  document.addEventListener('touchend',   onDragEnd);
+  e.preventDefault();
+}
+
+function onDragMove(e) {
+  if (!isDragging) return;
+  const { x, y } = getXY(e);
+  currentX = x; currentY = y;
+  const dx = currentX - startX;
+  const dy = currentY - startY;
+  const rotate = dx * 0.06;
+
+  topCardEl.style.transform = `translate(${dx}px, ${dy}px) rotate(${rotate}deg)`;
+
+  // Show feedback labels
+  const saveLabel    = topCardEl.querySelector('.swipe-label-save');
+  const skipLabel    = topCardEl.querySelector('.swipe-label-skip');
+  const appliedLabel = topCardEl.querySelector('.swipe-label-applied');
+
+  const threshold = 60;
+  if (dx > threshold)         { if(saveLabel)    saveLabel.style.opacity    = Math.min((dx - threshold) / 60, 1); }
+  else                         { if(saveLabel)    saveLabel.style.opacity    = 0; }
+  if (dx < -threshold)         { if(skipLabel)    skipLabel.style.opacity    = Math.min((-dx - threshold) / 60, 1); }
+  else                         { if(skipLabel)    skipLabel.style.opacity    = 0; }
+  if (dy < -threshold && Math.abs(dx) < 80) { if(appliedLabel) appliedLabel.style.opacity = Math.min((-dy - threshold) / 60, 1); }
+  else                         { if(appliedLabel) appliedLabel.style.opacity = 0; }
+
+  e.preventDefault();
+}
+
+function onDragEnd(e) {
+  if (!isDragging) return;
+  isDragging = false;
+  document.removeEventListener('mousemove',  onDragMove);
+  document.removeEventListener('mouseup',    onDragEnd);
+  document.removeEventListener('touchmove',  onDragMove);
+  document.removeEventListener('touchend',   onDragEnd);
+
+  const dx = currentX - startX;
+  const dy = currentY - startY;
+  const SWIPE_THRESHOLD_X = 100;
+  const SWIPE_THRESHOLD_Y = -100;
+
+  topCardEl.style.transition = '';
+
+  if (dx > SWIPE_THRESHOLD_X) {
+    swipeCard('right');
+  } else if (dx < -SWIPE_THRESHOLD_X) {
+    swipeCard('left');
+  } else if (dy < SWIPE_THRESHOLD_Y && Math.abs(dx) < 80) {
+    swipeCard('up');
+  } else {
+    // Snap back
+    topCardEl.style.transform = 'translateY(0) scale(1)';
+    const saveLabel    = topCardEl.querySelector('.swipe-label-save');
+    const skipLabel    = topCardEl.querySelector('.swipe-label-skip');
+    const appliedLabel = topCardEl.querySelector('.swipe-label-applied');
+    if(saveLabel)    saveLabel.style.opacity    = 0;
+    if(skipLabel)    skipLabel.style.opacity    = 0;
+    if(appliedLabel) appliedLabel.style.opacity = 0;
+  }
+}
+
+// ── KEYBOARD SHORTCUTS ────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  // Don't trigger if typing in an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') swipeCard('right');
+  if (e.key === 'ArrowLeft')  swipeCard('left');
+  if (e.key === 'ArrowUp')    swipeCard('up');
+});
+
+// ── BUILD CARD (DOM element) ───────────────────────────────────────────────
 function buildCard(opp) {
   const c    = catColor(opp.category);
   const card = document.createElement('div');
   card.className = 'card';
-  const deadline = opp.deadline || 'Check site';
+
+  const deadline  = opp.deadline || 'Check site';
   const isSaved   = !!savedOpps[opp.id];
   const isApplied = !!appliedOpps[opp.id];
+
   let statusBadge = '';
   if (isApplied) statusBadge = '<span class="status-badge applied">✔︎ APPLIED</span>';
   else if (isSaved) statusBadge = '<span class="status-badge saved"> ★ SAVED</span>';
 
   card.innerHTML = `
     <div class="card-stripe" style="background:${c.dot}"></div>
+
+    <!-- Swipe direction labels -->
+    <div class="swipe-label swipe-label-save">SAVE ★</div>
+    <div class="swipe-label swipe-label-skip">SKIP ✕</div>
+    <div class="swipe-label swipe-label-applied">APPLIED ✔︎</div>
+
     ${statusBadge}
+
     <div class="card-top">
       <span class="cat-badge" style="color:${c.text};border-color:${c.dot};background:${c.bg}">
         <span class="dot" style="background:${c.dot}"></span>${escHtml(opp.category || 'Other')}
       </span>
       <span class="card-source">${escHtml(opp.source || '')}</span>
     </div>
+
     <div class="card-title">${escHtml(opp.title || 'Untitled')}</div>
     <div class="card-desc">${escHtml(opp.description || '')}</div>
+
     <div class="card-meta">
       ${opp.location ? `<span class="meta-chip"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>${escHtml(opp.location)}</span>` : ''}
       ${opp.eligibility ? `<span class="meta-chip"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${escHtml(opp.eligibility)}</span>` : ''}
     </div>
+
     <div class="card-footer">
       <span class="deadline ${isUrgentDeadline(deadline) ? 'urgent' : ''}">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         ${escHtml(deadline)}
       </span>
-      <div class="card-actions">
-        <button class="action-btn save-btn ${isSaved ? 'active' : ''}" title="${isSaved ? 'Saved!' : 'Save'}">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="${isSaved ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        </button>
-        <button class="action-btn apply-btn-icon ${isApplied ? 'active' : ''}" title="${isApplied ? 'Applied!' : 'Mark as applied'}">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        </button>
-        <a class="apply-link" href="${escHtml(opp.url || '#')}" target="_blank" rel="noopener">
-          Apply<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
-        </a>
-      </div>
+      <a class="apply-link" href="${escHtml(opp.url || '#')}" target="_blank" rel="noopener">
+        Apply<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+      </a>
     </div>`;
 
-  card.querySelector('.save-btn').addEventListener('click', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    toggleSave(opp, e.currentTarget);
-  });
-  card.querySelector('.apply-btn-icon').addEventListener('click', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    toggleApplied(opp, e.currentTarget);
-  });
-  card.addEventListener('click', (e) => {
-    if (e.target.closest('.action-btn, .apply-link')) return;
-    window.open(opp.url || '#', '_blank', 'noopener');
-  });
-  card.style.cursor = 'pointer';
   return card;
 }
 
@@ -1005,6 +1645,8 @@ function escHtml(s) {
 }
 
 // ── AUTH STATE ─────────────────────────────────────────────────────────────
+let bootedSessionId = null;
+
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('Auth:', event, session?.user?.email);
 
@@ -1017,7 +1659,6 @@ sb.auth.onAuthStateChange(async (event, session) => {
     return;
   }
 
-  // Only boot on actual sign-in events, not token refreshes
   if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') return;
 
   const userId = session.user.id;
@@ -1050,7 +1691,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
       name: profile?.name || '',
       school: profile?.school || '',
       interests: profile?.interests || [],
-      looking_for: profile?.looking_for || [],  // fixed key
+      looking_for: profile?.looking_for || [],
     };
     renderObStep();
     document.getElementById('onboarding-overlay').classList.add('visible');
@@ -1059,8 +1700,8 @@ sb.auth.onAuthStateChange(async (event, session) => {
     await loadData();
   }
 });
-document.getElementById('search').addEventListener('input', renderCards);
 
+document.getElementById('search').addEventListener('input', renderCards);
 
 window.switchAuthTab = switchAuthTab;
 window.handleAuth = handleAuth;
@@ -1077,6 +1718,8 @@ window.reopenOnboarding = reopenOnboarding;
 window.obNext = obNext;
 window.obBack = obBack;
 window.closeOnboarding = closeOnboarding;
+window.swipeCard = swipeCard;
+window.restartSwipe = restartSwipe;
 </script>
 </body>
 </html>

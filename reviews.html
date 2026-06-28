@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intern Reviews · YouthScout ✦</title>
+<link rel="icon" type="image/png" href="/Y.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<style>
+/* ── REVIEWS PAGE SHELL ─────────────────────────────────────── */
+html, body { height: 100%; }
+#reviews-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--cream);
+}
+
+/* ── PASSPORT STRIP (identical pattern to main app) ─────────── */
+.passport-strip {
+  flex-shrink: 0;
+  background: var(--dark);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 3px solid var(--pink);
+}
+.passport-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.passport-chip {
+  flex-shrink: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px; letter-spacing: 0.04em;
+  color: var(--dark); background: var(--lime);
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transform: rotate(-4deg);
+}
+.passport-id-text { display: flex; flex-direction: column; gap: 1px; }
+.passport-logo { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 0.04em; color: #fff; line-height: 1; }
+.passport-logo span { color: var(--pink); }
+.passport-sub { font-family: 'DM Sans', sans-serif; font-size: 12px; color: rgba(255,255,255,0.45); }
+.passport-sub strong { color: var(--lime); }
+.passport-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.picon-btn {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1.5px solid #2a2a2a; background: transparent;
+  color: rgba(255,255,255,0.55); font-size: 15px; cursor: pointer; transition: all 0.12s;
+}
+.picon-btn svg { width: 15px; height: 15px; }
+.picon-btn:hover { border-color: var(--lime); color: var(--lime); }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.5); text-decoration: none; padding: 6px 14px;
+  border: 1.5px solid #2a2a2a; border-radius: 100px; transition: all 0.12s;
+}
+.back-link:hover { border-color: var(--lime); color: var(--lime); }
+
+/* ── HERO BAR ───────────────────────────────────────────────── */
+.reviews-hero {
+  background: var(--dark);
+  padding: 32px 24px 28px;
+  border-bottom: 3px solid var(--dark);
+  background-image:
+    radial-gradient(circle at 10% 50%, rgba(255,45,120,0.12) 0%, transparent 50%),
+    radial-gradient(circle at 90% 30%, rgba(200,245,66,0.10) 0%, transparent 40%);
+}
+.reviews-hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-eyebrow {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--lime); margin-bottom: 8px;
+}
+.hero-heading {
+  font-family: 'Bebas Neue', sans-serif; font-size: clamp(40px, 8vw, 72px);
+  letter-spacing: 0.02em; line-height: 0.95; color: #fff; margin-bottom: 12px;
+}
+.hero-heading em { color: var(--pink); font-style: normal; }
+.hero-sub {
+  font-family: 'DM Sans', sans-serif; font-size: 14px; color: rgba(255,255,255,0.45);
+  max-width: 500px; line-height: 1.6; margin-bottom: 20px;
+}
+.hero-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+.hero-stat { display: flex; flex-direction: column; gap: 2px; }
+.hero-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--lime); line-height: 1; }
+.hero-stat-label { font-family: 'DM Sans', sans-serif; font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── CONTROLS BAR ───────────────────────────────────────────── */
+.controls-bar {
+  background: #fff; border-bottom: 2px solid var(--dark);
+  padding: 12px 20px; display: flex; align-items: center;
+  gap: 10px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100;
+}
+.search-wrap {
+  display: flex; align-items: center; gap: 8px;
+  flex: 1; min-width: 200px;
+  border: 1.5px solid var(--border); border-radius: 100px;
+  padding: 8px 16px; background: var(--cream);
+}
+.search-wrap svg { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+.search-wrap input {
+  border: none; background: transparent; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--dark); width: 100%;
+}
+.search-wrap input::placeholder { color: #b0a89a; }
+.filter-select {
+  border: 1.5px solid var(--border); border-radius: 100px;
+  padding: 8px 14px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+  font-weight: 600; color: var(--dark); background: #fff; cursor: pointer; outline: none;
+}
+.submit-review-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--pink); color: #fff; border: none; border-radius: 100px;
+  padding: 9px 18px; font-family: 'Syne', sans-serif; font-size: 13px;
+  font-weight: 700; letter-spacing: 0.03em; cursor: pointer; transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.submit-review-btn:hover { opacity: 0.88; }
+.result-info {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--muted);
+  font-weight: 600; white-space: nowrap;
+}
+
+/* ── MAIN LAYOUT ─────────────────────────────────────────────── */
+.reviews-main {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  flex: 1;
+  max-width: 1140px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0;
+}
+@media (max-width: 720px) {
+  .reviews-main { grid-template-columns: 1fr; }
+  .company-sidebar { display: none; }
+}
+
+/* ── COMPANY SIDEBAR ─────────────────────────────────────────── */
+.company-sidebar {
+  border-right: 2px solid var(--dark);
+  padding: 20px 0;
+  background: #fff;
+  overflow-y: auto;
+  position: sticky;
+  top: 57px; /* controls-bar height */
+  height: calc(100vh - 57px);
+}
+.sidebar-heading {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.08em;
+  color: var(--muted); padding: 0 16px 10px; border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.company-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; cursor: pointer; transition: background 0.1s;
+  border-left: 3px solid transparent; gap: 10px;
+}
+.company-item:hover { background: var(--cream); }
+.company-item.active { border-left-color: var(--pink); background: rgba(255,45,120,0.04); }
+.company-name { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; color: var(--dark); }
+.company-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.company-rating-badge {
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 800;
+  color: #fff; background: var(--dark); padding: 2px 7px; border-radius: 6px;
+}
+.company-rating-badge.high { background: #00c896; }
+.company-rating-badge.mid  { background: #f59e0b; }
+.company-rating-badge.low  { background: #e74c3c; }
+.company-count { font-size: 10px; color: var(--muted); }
+
+/* ── REVIEW FEED ─────────────────────────────────────────────── */
+.review-feed {
+  padding: 24px 28px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+@media (max-width: 600px) { .review-feed { padding: 16px; } }
+
+/* Company summary card (appears at top of feed) */
+.company-summary {
+  background: var(--dark); border-radius: 20px; padding: 24px 28px;
+  display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;
+  border: 2px solid var(--dark);
+}
+.company-summary-left { flex: 1; min-width: 200px; }
+.company-summary-name {
+  font-family: 'Bebas Neue', sans-serif; font-size: 32px;
+  color: #fff; letter-spacing: 0.03em; line-height: 1; margin-bottom: 4px;
+}
+.company-summary-industry {
+  font-family: 'DM Sans', sans-serif; font-size: 12px;
+  color: rgba(255,255,255,0.4); letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.rating-big {
+  display: flex; align-items: baseline; gap: 6px;
+  font-family: 'Bebas Neue', sans-serif; font-size: 56px; color: var(--lime); line-height: 1;
+}
+.rating-big-denom { font-size: 22px; color: rgba(255,255,255,0.3); }
+.rating-stars { font-size: 20px; margin-top: 2px; }
+.rating-count { font-family: 'DM Sans', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+.company-summary-right { display: flex; flex-direction: column; gap: 14px; min-width: 180px; }
+.score-row { display: flex; flex-direction: column; gap: 4px; }
+.score-label { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); letter-spacing: 0.06em; text-transform: uppercase; }
+.score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.score-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden; }
+.score-bar-fill { height: 100%; background: var(--lime); border-radius: 99px; transition: width 0.5s ease; }
+.score-val { font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: var(--lime); min-width: 22px; }
+
+/* Individual review card */
+.review-card {
+  background: #fff; border: 2px solid var(--dark); border-radius: 20px;
+  padding: 22px 24px; display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 3px 3px 0 var(--dark); transition: transform 0.13s, box-shadow 0.13s;
+}
+.review-card:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--dark); }
+.review-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.review-meta-left { display: flex; flex-direction: column; gap: 4px; }
+.review-company-tag {
+  font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.06em;
+  color: var(--pink);
+}
+.review-role {
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 800; color: var(--dark);
+}
+.review-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.review-chip {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 100px; background: var(--cream);
+  color: var(--muted); border: 1.5px solid var(--border);
+}
+.review-chip.verified { background: rgba(0,200,150,0.08); color: #00c896; border-color: #00c896; }
+.review-chip.scraped  { background: rgba(123,92,240,0.08); color: #7b5cf0; border-color: #7b5cf0; }
+.review-rating-group { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.review-overall {
+  font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--dark);
+  line-height: 1;
+}
+.review-stars { font-size: 14px; }
+.mini-scores { display: flex; gap: 10px; }
+.mini-score { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.mini-score-val { font-family: 'Bebas Neue', sans-serif; font-size: 16px; color: var(--dark); line-height: 1; }
+.mini-score-label { font-size: 9px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.review-body { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--dark); line-height: 1.7; }
+.review-pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .review-pros-cons { grid-template-columns: 1fr; } }
+.pro-con-box { border-radius: 12px; padding: 12px 14px; }
+.pro-con-box.pros { background: rgba(0,200,150,0.06); border: 1.5px solid rgba(0,200,150,0.2); }
+.pro-con-box.cons { background: rgba(231,76,60,0.05); border: 1.5px solid rgba(231,76,60,0.15); }
+.pro-con-label { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+.pro-con-box.pros .pro-con-label { color: #00c896; }
+.pro-con-box.cons .pro-con-label { color: #e74c3c; }
+.pro-con-list { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--dark); line-height: 1.6; }
+.pro-con-list li { list-style: none; padding-left: 14px; position: relative; }
+.pro-con-list li::before { position: absolute; left: 0; }
+.pro-con-box.pros .pro-con-list li::before { content: '+'; color: #00c896; font-weight: 700; }
+.pro-con-box.cons .pro-con-list li::before { content: '−'; color: #e74c3c; font-weight: 700; }
+.review-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding-top: 12px; border-top: 1.5px solid var(--border); }
+.review-author { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--muted); }
+.review-date   { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--muted); }
+.helpful-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+  color: var(--muted); background: transparent;
+  border: 1.5px solid var(--border); border-radius: 100px; padding: 4px 12px;
+  cursor: pointer; transition: all 0.12s;
+}
+.helpful-btn:hover, .helpful-btn.voted { border-color: var(--pink); color: var(--pink); }
+
+/* ── SOURCE TAG ──────────────────────────────────────────────── */
+.source-indicator {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: 100px;
+}
+.source-indicator.reddit  { background: rgba(255,69,0,0.1);  color: #ff4500; border: 1px solid rgba(255,69,0,0.2); }
+.source-indicator.user    { background: rgba(0,200,150,0.1); color: #00c896; border: 1px solid rgba(0,200,150,0.2); }
+.source-indicator.scraped { background: rgba(123,92,240,0.1);color: #7b5cf0; border: 1px solid rgba(123,92,240,0.2); }
+
+/* ── EMPTY / LOADING ─────────────────────────────────────────── */
+.feed-empty {
+  text-align: center; padding: 60px 20px; color: var(--muted);
+}
+.feed-empty-icon { font-size: 40px; margin-bottom: 12px; }
+.feed-empty h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--dark); letter-spacing: 0.04em; margin-bottom: 6px; }
+.feed-empty p  { font-size: 13px; line-height: 1.6; }
+
+/* ── MODAL: SUBMIT REVIEW ────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 800;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #181818; border: 1.5px solid #2a2a2a; border-radius: 24px;
+  padding: 36px; width: 100%; max-width: 580px; max-height: 90vh;
+  overflow-y: auto; position: relative;
+}
+.modal-heading {
+  font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: #fff;
+  letter-spacing: 0.03em; margin-bottom: 4px;
+}
+.modal-heading em { color: var(--pink); font-style: normal; }
+.modal-sub { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 28px; }
+.modal-close {
+  position: absolute; top: 20px; right: 20px;
+  background: transparent; border: 1.5px solid #2a2a2a; border-radius: 100px;
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.4); cursor: pointer; font-size: 16px; transition: all 0.12s;
+}
+.modal-close:hover { border-color: var(--pink); color: var(--pink); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+.form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.form-field label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); letter-spacing: 0.08em; text-transform: uppercase; }
+.form-field input,
+.form-field select,
+.form-field textarea {
+  background: #111; border: 1.5px solid #2a2a2a; border-radius: 12px;
+  padding: 11px 14px; color: #fff; font-family: 'DM Sans', inherit; font-size: 14px;
+  outline: none; transition: border-color 0.15s;
+}
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus { border-color: var(--pink); }
+.form-field input::placeholder,
+.form-field textarea::placeholder { color: rgba(255,255,255,0.2); }
+.form-field select option { background: #181818; }
+.form-field textarea { resize: vertical; min-height: 90px; }
+.rating-picker { display: flex; gap: 10px; }
+.rating-option {
+  flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid #2a2a2a;
+  background: transparent; color: rgba(255,255,255,0.4); font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px; cursor: pointer; text-align: center; transition: all 0.12s;
+}
+.rating-option.selected { border-color: var(--pink); background: rgba(255,45,120,0.12); color: var(--pink); }
+.score-sliders { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-label { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); width: 90px; flex-shrink: 0; }
+.slider-input { flex: 1; accent-color: var(--pink); cursor: pointer; }
+.slider-val { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--lime); min-width: 20px; text-align: right; }
+.form-submit-btn {
+  width: 100%; background: var(--pink); color: #fff; border: none; border-radius: 100px;
+  padding: 14px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+  letter-spacing: 0.04em; cursor: pointer; margin-top: 8px; transition: opacity 0.15s;
+}
+.form-submit-btn:hover { opacity: 0.88; }
+.form-submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.form-msg { font-size: 13px; color: var(--pink); margin-top: 10px; min-height: 18px; text-align: center; }
+.form-msg.success { color: var(--lime); }
+.anon-note { font-size: 12px; color: rgba(255,255,255,0.25); text-align: center; margin-top: 12px; }
+
+/* ── TOAST (re-declare if index.css not loaded yet) ─────────── */
+#toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--dark); color: #fff; font-size: 13px; font-weight: 600; padding: 11px 18px; border-radius: 100px; border-left: 3px solid var(--lime); pointer-events: auto; animation: toastIn 0.25s ease both, toastOut 0.3s ease 2.4s both; max-width: 280px; }
+.toast.error { border-left-color: var(--pink); }
+@keyframes toastIn  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(8px); } }
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- ── SUBMIT REVIEW MODAL ──────────────────────────────────── -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-heading">SHARE YOUR <em>INTERN EXPERIENCE</em></div>
+    <p class="modal-sub">Anonymous · takes 3 mins · helps hundreds of students</p>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label>Company name *</label>
+        <input type="text" id="f-company" placeholder="e.g. DBS Bank" list="company-suggestions">
+        <datalist id="company-suggestions"></datalist>
+      </div>
+      <div class="form-field">
+        <label>Your role *</label>
+        <input type="text" id="f-role" placeholder="e.g. Software Engineer Intern">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label>Industry</label>
+        <select id="f-industry">
+          <option value="">Select industry</option>
+          <option>Technology</option>
+          <option>Finance / Banking</option>
+          <option>Government / Statutory Board</option>
+          <option>Healthcare</option>
+          <option>Consulting</option>
+          <option>Media / Marketing</option>
+          <option>Engineering</option>
+          <option>Education</option>
+          <option>Retail / E-commerce</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Duration</label>
+        <select id="f-duration">
+          <option value="">Select duration</option>
+          <option>< 3 months</option>
+          <option>3–6 months</option>
+          <option>6–12 months</option>
+          <option>> 12 months</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label>Overall rating *</label>
+      <div class="rating-picker" id="rating-picker">
+        <button class="rating-option" data-val="1" onclick="pickRating(1)">1</button>
+        <button class="rating-option" data-val="2" onclick="pickRating(2)">2</button>
+        <button class="rating-option" data-val="3" onclick="pickRating(3)">3</button>
+        <button class="rating-option" data-val="4" onclick="pickRating(4)">4</button>
+        <button class="rating-option" data-val="5" onclick="pickRating(5)">5</button>
+      </div>
+    </div>
+
+    <div class="score-sliders">
+      <div class="slider-row">
+        <span class="slider-label">Learning</span>
+        <input type="range" class="slider-input" id="s-learning" min="1" max="5" value="3" step="1" oninput="updateSlider('learning',this.value)">
+        <span class="slider-val" id="sv-learning">3</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Mentorship</span>
+        <input type="range" class="slider-input" id="s-mentorship" min="1" max="5" value="3" step="1" oninput="updateSlider('mentorship',this.value)">
+        <span class="slider-val" id="sv-mentorship">3</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Work-life</span>
+        <input type="range" class="slider-input" id="s-wlb" min="1" max="5" value="3" step="1" oninput="updateSlider('wlb',this.value)">
+        <span class="slider-val" id="sv-wlb">3</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Culture</span>
+        <input type="range" class="slider-input" id="s-culture" min="1" max="5" value="3" step="1" oninput="updateSlider('culture',this.value)">
+        <span class="slider-val" id="sv-culture">3</span>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label>What was your experience like? *</label>
+      <textarea id="f-body" placeholder="Describe the day-to-day, what you worked on, team culture, advice for future interns…" rows="4"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label>Pros (one per line)</label>
+        <textarea id="f-pros" placeholder="Good mentors&#10;Real projects&#10;Free lunch" rows="3"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Cons (one per line)</label>
+        <textarea id="f-cons" placeholder="Rigid hours&#10;Lots of admin work" rows="3"></textarea>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label>Stipend (optional)</label>
+      <input type="text" id="f-stipend" placeholder="e.g. $1,200/month or 'Unpaid'">
+    </div>
+
+    <button class="form-submit-btn" id="review-submit-btn" onclick="submitReview()">Submit review ✦</button>
+    <p class="form-msg" id="form-msg"></p>
+    <p class="anon-note">Your review is anonymous. We never share your email or identity.</p>
+  </div>
+</div>
+
+<!-- ── MAIN APP ──────────────────────────────────────────────── -->
+<div id="reviews-app">
+
+  <!-- Passport strip -->
+  <div class="passport-strip">
+    <div class="passport-id">
+      <div class="passport-chip">✦R</div>
+      <div class="passport-id-text">
+        <span class="passport-logo">YOUTH<span>SCOUT</span></span>
+        <span class="passport-sub"><strong>Intern Reviews</strong> · SG</span>
+      </div>
+    </div>
+    <div class="passport-actions">
+      <a href="/" class="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to opps
+      </a>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="reviews-hero">
+    <div class="reviews-hero-inner">
+      <p class="hero-eyebrow">✦ crowdsourced + scraped</p>
+      <h1 class="hero-heading">INTERN<br><em>REVIEWS</em> SG</h1>
+      <p class="hero-sub">Real intern experiences in Singapore — what Google and Glassdoor won't show you. Written by students, for students.</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="hero-stat-num" id="stat-reviews">—</span>
+          <span class="hero-stat-label">Reviews</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num" id="stat-companies">—</span>
+          <span class="hero-stat-label">Companies</span>
+        </div>
+        <div class="hero-stat">
+          <span class="hero-stat-num" id="stat-avg">—</span>
+          <span class="hero-stat-label">Avg rating</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-bar">
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="review-search" placeholder="Search company, role, industry…" oninput="filterReviews()">
+    </div>
+    <select class="filter-select" id="industry-filter" onchange="filterReviews()">
+      <option value="">All industries</option>
+      <option>Technology</option>
+      <option>Finance / Banking</option>
+      <option>Government / Statutory Board</option>
+      <option>Healthcare</option>
+      <option>Consulting</option>
+      <option>Media / Marketing</option>
+      <option>Engineering</option>
+      <option>Education</option>
+    </select>
+    <select class="filter-select" id="sort-filter" onchange="filterReviews()">
+      <option value="recent">Most recent</option>
+      <option value="rating_high">Highest rated</option>
+      <option value="rating_low">Lowest rated</option>
+      <option value="helpful">Most helpful</option>
+    </select>
+    <span class="result-info" id="result-info"></span>
+    <button class="submit-review-btn" onclick="openModal()">+ Share your review</button>
+  </div>
+
+  <!-- Main layout -->
+  <div class="reviews-main">
+
+    <!-- Company sidebar -->
+    <div class="company-sidebar">
+      <div class="sidebar-heading">COMPANIES</div>
+      <div id="company-list"></div>
+    </div>
+
+    <!-- Review feed -->
+    <div class="review-feed" id="review-feed">
+      <div class="feed-empty">
+        <div class="feed-empty-icon"><div class="spinner"></div></div>
+        <p>Loading reviews…</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── SUPABASE ──────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://vpusuhbjrzgnbxyklllx.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_BgtS8ree6dr34tiJ1ikM0w__Or89ppF';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+// ── STATE ─────────────────────────────────────────────────────
+let allReviews      = [];  // full dataset (scraped JSON + Supabase user submissions)
+let filteredReviews = [];
+let selectedCompany = null;
+let pickedRating    = 0;
+const sliderVals    = { learning: 3, mentorship: 3, wlb: 3, culture: 3 };
+let helpfulVotes    = JSON.parse(localStorage.getItem('ys-helpful-votes') || '{}');
+
+// ── SAMPLE / FALLBACK DATA ────────────────────────────────────
+// This mirrors the shape your Python scraper should produce in data/reviews.json
+const SAMPLE_REVIEWS = [
+  {
+    id: 'r1', company: 'GovTech Singapore', industry: 'Government / Statutory Board',
+    role: 'Software Engineer Intern', duration: '6–12 months', overall: 5,
+    learning: 5, mentorship: 4, wlb: 5, culture: 5,
+    body: 'One of the best internships I\'ve ever had. Got to work on a live product used by millions of Singaporeans — the SingPass system. Mentors are senior engineers who actually cared about our growth. The culture is surprisingly startup-ish for a government agency.',
+    pros: ['Real production work from day 1', 'Excellent mentorship', 'Flexible WFH arrangement', '$2,000/month stipend'],
+    cons: ['Procurement processes are slow', 'Some legacy codebases'],
+    stipend: '$2,000/month', date: '2026-05', source: 'user', helpful: 14,
+  },
+  {
+    id: 'r2', company: 'DBS Bank', industry: 'Finance / Banking',
+    role: 'Data Analyst Intern', duration: '3–6 months', overall: 4,
+    learning: 4, mentorship: 3, wlb: 3, culture: 4,
+    body: 'DBS has invested heavily in tech so the data stack is modern — Databricks, Python, Tableau. You get actual analyst work, not just PowerPoint. That said, banking hours are banking hours. Expect to stay past 7pm occasionally.',
+    pros: ['Modern data tools', 'Brand name for resume', 'Good pay', 'Large network of interns'],
+    cons: ['Long hours during project crunch', 'Bureaucratic approval process', 'WFH less flexible than expected'],
+    stipend: '$1,400/month', date: '2026-03', source: 'user', helpful: 9,
+  },
+  {
+    id: 'r3', company: 'Shopee (Sea Group)', industry: 'Technology',
+    role: 'Backend Engineer Intern', duration: '3–6 months', overall: 4,
+    learning: 5, mentorship: 4, wlb: 2, culture: 3,
+    body: 'Technical growth is unmatched — the scale of problems you work on as an intern is genuinely impressive. Code quality bar is very high. However the work-life balance is rough: 10am–10pm is not unusual, especially pre-release. Not for everyone but if you\'re here to grind and learn fast, it\'s great.',
+    pros: ['Massive technical scale', 'Excellent compensation', 'High-calibre teammates', 'Strong intern program structure'],
+    cons: ['Long hours, the 996 culture is real', 'Fast-paced can feel overwhelming', 'Limited WFH'],
+    stipend: '$2,200/month', date: '2026-02', source: 'user', helpful: 22,
+  },
+  {
+    id: 'r4', company: 'GovTech Singapore', industry: 'Government / Statutory Board',
+    role: 'UX Design Intern', duration: '3–6 months', overall: 4,
+    learning: 4, mentorship: 5, wlb: 5, culture: 4,
+    body: 'Was surprised by how much autonomy I had. Got to redesign a citizen-facing form flow and it actually shipped. The design team is small but very experienced. Great place if you want your work to have real societal impact.',
+    pros: ['Work ships to real users', 'Great design mentors', 'Good WFH policy', 'Meaningful work'],
+    cons: ['Design tooling slightly behind private sector', 'Slower iteration cycles'],
+    stipend: '$1,500/month', date: '2025-11', source: 'scraped', helpful: 7,
+  },
+  {
+    id: 'r5', company: 'KPMG Singapore', industry: 'Consulting',
+    role: 'Technology Consulting Intern', duration: '3–6 months', overall: 3,
+    learning: 3, mentorship: 3, wlb: 2, culture: 3,
+    body: 'You\'ll make a lot of PowerPoint decks and sit in a lot of client meetings. Good exposure to enterprise clients and you learn how to communicate with stakeholders. But if you\'re looking for technical depth, this isn\'t it. The brand opens doors though.',
+    pros: ['Client exposure', 'Good brand on resume', 'Structured intern program', 'Friendly team'],
+    cons: ['Mostly PPT and Excel', 'Not much coding', 'Long hours during client delivery', 'Generic work'],
+    stipend: '$1,200/month', date: '2025-10', source: 'scraped', helpful: 11,
+  },
+  {
+    id: 'r6', company: 'Grab', industry: 'Technology',
+    role: 'Product Management Intern', duration: '3–6 months', overall: 5,
+    learning: 5, mentorship: 5, wlb: 4, culture: 5,
+    body: 'Grab\'s intern program is one of the most structured I\'ve seen. You get a dedicated buddy, weekly PM mentorship sessions, and you own a real feature end-to-end. The culture is collaborative and everyone is willing to help. Loved it.',
+    pros: ['Structured program with buddy system', 'Owned real product features', 'Super collaborative culture', 'Flexible hours'],
+    cons: ['Very fast pace — need to be self-directed', 'Can feel big and siloed across teams'],
+    stipend: '$1,800/month', date: '2026-04', source: 'user', helpful: 17,
+  },
+  {
+    id: 'r7', company: 'ST Engineering', industry: 'Engineering',
+    role: 'Embedded Systems Intern', duration: '6–12 months', overall: 3,
+    learning: 4, mentorship: 2, wlb: 4, culture: 3,
+    body: 'Work-life balance is solid and you get exposed to aerospace and defence tech, which is cool. But mentorship is hit or miss depending on which team you land in. My supervisor was very hands-off — I had to figure things out by myself most of the time.',
+    pros: ['Interesting technical domain', 'Good hours', 'Allowance for certifications'],
+    cons: ['Mentorship quality varies widely', 'Slow bureaucracy', 'Some work is very siloed'],
+    stipend: '$1,000/month', date: '2025-09', source: 'scraped', helpful: 5,
+  },
+  {
+    id: 'r8', company: 'Stripe', industry: 'Technology',
+    role: 'Software Engineer Intern', duration: '3–6 months', overall: 5,
+    learning: 5, mentorship: 5, wlb: 5, culture: 5,
+    body: 'The gold standard for software engineering internships IMO. The code quality, the documentation culture, the thoughtfulness in every process — everything is operated at a level that you don\'t see elsewhere. Your intern project is real work that gets shipped. Highly recommend if you get the offer.',
+    pros: ['Best engineering culture I\'ve seen', 'Project ships to production', 'Amazing perks + pay', 'World-class mentors'],
+    cons: ['Interview bar is very high to get in', 'Remote-first can feel isolating'],
+    stipend: '~$8,000–10,000/month (USD equivalent)', date: '2026-01', source: 'user', helpful: 31,
+  },
+];
+
+// ── HELPERS ───────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function stars(n) {
+  return '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+}
+
+function ratingClass(r) {
+  if (r >= 4.2) return 'high';
+  if (r >= 3.0) return 'mid';
+  return 'low';
+}
+
+function sourceLabel(src) {
+  if (src === 'user')    return '<span class="source-indicator user">✦ Verified submission</span>';
+  if (src === 'reddit')  return '<span class="source-indicator reddit">r/ Reddit</span>';
+  return                        '<span class="source-indicator scraped">⟳ Scraped</span>';
+}
+
+function relDate(str) {
+  if (!str) return '';
+  const [y, m] = str.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${months[parseInt(m,10)-1]} ${y}`;
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────────
+// Merges: data/reviews.json (scraped) + Supabase intern_reviews table (user submissions)
+async function loadReviews() {
+  let scraped = [];
+  try {
+    const resp = await fetch('data/reviews.json?t=' + Date.now(), { cache: 'no-store' });
+    if (resp.ok) scraped = await resp.json();
+  } catch (_) { /* fallback below */ }
+
+  let userSubmissions = [];
+  try {
+    const { data } = await sb.from('intern_reviews').select('*').eq('approved', true);
+    if (data?.length) userSubmissions = data.map(r => ({ ...r, source: 'user' }));
+  } catch (_) { /* no table yet, that's fine */ }
+
+  // Merge; deduplicate by id; sample data fills gap if both sources empty
+  const merged = [...scraped, ...userSubmissions];
+  allReviews = merged.length ? merged : SAMPLE_REVIEWS;
+
+  updateStats();
+  filterReviews();
+  buildCompanySidebar();
+  buildCompanyDatalist();
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function updateStats() {
+  const total     = allReviews.length;
+  const companies = new Set(allReviews.map(r => r.company)).size;
+  const avg       = total ? (allReviews.reduce((s, r) => s + r.overall, 0) / total).toFixed(1) : '—';
+  document.getElementById('stat-reviews').textContent   = total;
+  document.getElementById('stat-companies').textContent = companies;
+  document.getElementById('stat-avg').textContent       = avg;
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────────
+function buildCompanySidebar() {
+  const companyMap = {};
+  allReviews.forEach(r => {
+    if (!companyMap[r.company]) companyMap[r.company] = { total: 0, sum: 0 };
+    companyMap[r.company].total++;
+    companyMap[r.company].sum += r.overall;
+  });
+  const sorted = Object.entries(companyMap).sort((a,b) => b[1].total - a[1].total);
+  const container = document.getElementById('company-list');
+  container.innerHTML = sorted.map(([name, { total, sum }]) => {
+    const avg = (sum / total).toFixed(1);
+    const cls = ratingClass(parseFloat(avg));
+    const active = name === selectedCompany ? ' active' : '';
+    return `
+      <div class="company-item${active}" onclick="selectCompany('${esc(name)}')">
+        <span class="company-name">${esc(name)}</span>
+        <span class="company-meta">
+          <span class="company-rating-badge ${cls}">${avg}</span>
+          <span class="company-count">${total} review${total > 1 ? 's' : ''}</span>
+        </span>
+      </div>`;
+  }).join('');
+}
+
+function selectCompany(name) {
+  selectedCompany = selectedCompany === name ? null : name;
+  buildCompanySidebar();
+  filterReviews();
+}
+
+function buildCompanyDatalist() {
+  const companies = [...new Set(allReviews.map(r => r.company))].sort();
+  document.getElementById('company-suggestions').innerHTML =
+    companies.map(c => `<option value="${esc(c)}">`).join('');
+}
+
+// ── FILTER + SORT ─────────────────────────────────────────────
+function filterReviews() {
+  const q        = document.getElementById('review-search').value.toLowerCase().trim();
+  const industry = document.getElementById('industry-filter').value;
+  const sortBy   = document.getElementById('sort-filter').value;
+
+  filteredReviews = allReviews.filter(r => {
+    if (selectedCompany && r.company !== selectedCompany) return false;
+    if (industry && r.industry !== industry) return false;
+    if (q) {
+      const hay = (r.company + r.role + r.industry + r.body + (r.pros||[]).join(' ')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  filteredReviews.sort((a, b) => {
+    if (sortBy === 'rating_high') return b.overall - a.overall;
+    if (sortBy === 'rating_low')  return a.overall - b.overall;
+    if (sortBy === 'helpful')     return (b.helpful||0) - (a.helpful||0);
+    return (b.date || '').localeCompare(a.date || ''); // recent
+  });
+
+  document.getElementById('result-info').textContent = `${filteredReviews.length} review${filteredReviews.length !== 1 ? 's' : ''}`;
+  renderFeed();
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderFeed() {
+  const feed = document.getElementById('review-feed');
+
+  if (!filteredReviews.length) {
+    feed.innerHTML = `<div class="feed-empty"><div class="feed-empty-icon">🔍</div><h3>NO REVIEWS FOUND</h3><p>Try a different search, or be the first to review this company.</p></div>`;
+    return;
+  }
+
+  // If a single company is selected, show the summary card first
+  let html = '';
+  if (selectedCompany) {
+    const companyReviews = filteredReviews.filter(r => r.company === selectedCompany);
+    if (companyReviews.length) html += buildCompanySummary(selectedCompany, companyReviews);
+  }
+
+  html += filteredReviews.map(r => buildReviewCard(r)).join('');
+  feed.innerHTML = html;
+}
+
+function buildCompanySummary(name, reviews) {
+  const avg      = (reviews.reduce((s,r) => s + r.overall, 0) / reviews.length).toFixed(1);
+  const learning = (reviews.reduce((s,r) => s + (r.learning||3), 0) / reviews.length).toFixed(1);
+  const mentor   = (reviews.reduce((s,r) => s + (r.mentorship||3), 0) / reviews.length).toFixed(1);
+  const wlb      = (reviews.reduce((s,r) => s + (r.wlb||3), 0) / reviews.length).toFixed(1);
+  const culture  = (reviews.reduce((s,r) => s + (r.culture||3), 0) / reviews.length).toFixed(1);
+  const bar = (val) => `<div class="score-bar-fill" style="width:${(val/5)*100}%"></div>`;
+  return `
+    <div class="company-summary">
+      <div class="company-summary-left">
+        <div class="company-summary-name">${esc(name)}</div>
+        <div class="company-summary-industry">${esc(reviews[0]?.industry || '')}</div>
+        <div class="rating-big">${avg}<span class="rating-big-denom">/5</span></div>
+        <div class="rating-stars">${stars(parseFloat(avg))}</div>
+        <div class="rating-count">${reviews.length} intern review${reviews.length > 1 ? 's' : ''}</div>
+      </div>
+      <div class="company-summary-right">
+        <div class="score-row"><span class="score-label">Learning</span>
+          <div class="score-bar-wrap"><div class="score-bar">${bar(learning)}</div><span class="score-val">${learning}</span></div></div>
+        <div class="score-row"><span class="score-label">Mentorship</span>
+          <div class="score-bar-wrap"><div class="score-bar">${bar(mentor)}</div><span class="score-val">${mentor}</span></div></div>
+        <div class="score-row"><span class="score-label">Work-life</span>
+          <div class="score-bar-wrap"><div class="score-bar">${bar(wlb)}</div><span class="score-val">${wlb}</span></div></div>
+        <div class="score-row"><span class="score-label">Culture</span>
+          <div class="score-bar-wrap"><div class="score-bar">${bar(culture)}</div><span class="score-val">${culture}</span></div></div>
+      </div>
+    </div>`;
+}
+
+function buildReviewCard(r) {
+  const helpful   = helpfulVotes[r.id] ? ' voted' : '';
+  const prosHtml  = (r.pros || []).map(p => `<li>${esc(p)}</li>`).join('');
+  const consHtml  = (r.cons || []).map(c => `<li>${esc(c)}</li>`).join('');
+  const hasPCols  = prosHtml || consHtml;
+  return `
+    <div class="review-card" data-id="${esc(r.id)}">
+      <div class="review-header">
+        <div class="review-meta-left">
+          <span class="review-company-tag">✦ ${esc(r.company)}</span>
+          <div class="review-role">${esc(r.role)}</div>
+          <div class="review-chips">
+            ${r.duration ? `<span class="review-chip">${esc(r.duration)}</span>` : ''}
+            ${r.industry  ? `<span class="review-chip">${esc(r.industry)}</span>` : ''}
+            ${r.stipend   ? `<span class="review-chip">💰 ${esc(r.stipend)}</span>` : ''}
+            ${sourceLabel(r.source)}
+          </div>
+        </div>
+        <div class="review-rating-group">
+          <div class="review-overall">${r.overall}/5</div>
+          <div class="review-stars">${stars(r.overall)}</div>
+          <div class="mini-scores">
+            <div class="mini-score"><span class="mini-score-val">${r.learning||'—'}</span><span class="mini-score-label">Learn</span></div>
+            <div class="mini-score"><span class="mini-score-val">${r.mentorship||'—'}</span><span class="mini-score-label">Mentor</span></div>
+            <div class="mini-score"><span class="mini-score-val">${r.wlb||'—'}</span><span class="mini-score-label">WLB</span></div>
+            <div class="mini-score"><span class="mini-score-val">${r.culture||'—'}</span><span class="mini-score-label">Culture</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="review-body">${esc(r.body)}</div>
+      ${hasPCols ? `
+      <div class="review-pros-cons">
+        <div class="pro-con-box pros">
+          <div class="pro-con-label">Pros</div>
+          <ul class="pro-con-list">${prosHtml}</ul>
+        </div>
+        <div class="pro-con-box cons">
+          <div class="pro-con-label">Cons</div>
+          <ul class="pro-con-list">${consHtml}</ul>
+        </div>
+      </div>` : ''}
+      <div class="review-footer">
+        <span class="review-author">Anonymous intern</span>
+        <span class="review-date">${relDate(r.date)}</span>
+        <button class="helpful-btn${helpful}" onclick="markHelpful('${esc(r.id)}', this)">
+          👍 Helpful (${(r.helpful||0) + (helpfulVotes[r.id]||0)})
+        </button>
+      </div>
+    </div>`;
+}
+
+// ── HELPFUL VOTE ──────────────────────────────────────────────
+function markHelpful(id, btn) {
+  if (helpfulVotes[id]) { toast('You already marked this as helpful'); return; }
+  helpfulVotes[id] = 1;
+  localStorage.setItem('ys-helpful-votes', JSON.stringify(helpfulVotes));
+  btn.classList.add('voted');
+  const current = parseInt(btn.textContent.match(/\d+/)?.[0] || '0');
+  btn.textContent = `👍 Helpful (${current + 1})`;
+  // Optimistic update to Supabase
+  sb.from('intern_reviews').select('helpful').eq('id', id).single().then(({ data }) => {
+    if (data) sb.from('intern_reviews').update({ helpful: (data.helpful||0) + 1 }).eq('id', id);
+  }).catch(() => {});
+}
+
+// ── SUBMIT REVIEW MODAL ───────────────────────────────────────
+function openModal() {
+  document.getElementById('review-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('review-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('form-msg').textContent = '';
+}
+
+function pickRating(val) {
+  pickedRating = val;
+  document.querySelectorAll('.rating-option').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.val) <= val);
+  });
+}
+
+function updateSlider(key, val) {
+  sliderVals[key] = parseInt(val);
+  document.getElementById(`sv-${key}`).textContent = val;
+}
+
+async function submitReview() {
+  const company = document.getElementById('f-company').value.trim();
+  const role    = document.getElementById('f-role').value.trim();
+  const body    = document.getElementById('f-body').value.trim();
+  const msg     = document.getElementById('form-msg');
+
+  if (!company || !role || !pickedRating || !body) {
+    msg.textContent = 'Please fill in company, role, rating, and review text.';
+    msg.className = 'form-msg';
+    return;
+  }
+
+  const btn = document.getElementById('review-submit-btn');
+  btn.disabled = true;
+  msg.textContent = '';
+
+  const pros = document.getElementById('f-pros').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const cons = document.getElementById('f-cons').value.split('\n').map(s => s.trim()).filter(Boolean);
+
+  const payload = {
+    company,
+    role,
+    industry:   document.getElementById('f-industry').value || null,
+    duration:   document.getElementById('f-duration').value || null,
+    overall:    pickedRating,
+    learning:   sliderVals.learning,
+    mentorship: sliderVals.mentorship,
+    wlb:        sliderVals.wlb,
+    culture:    sliderVals.culture,
+    body,
+    pros,
+    cons,
+    stipend:    document.getElementById('f-stipend').value.trim() || null,
+    source:     'user',
+    approved:   false,  // pending moderation before it appears publicly
+    helpful:    0,
+    date:       new Date().toISOString().slice(0, 7), // YYYY-MM
+  };
+
+  const { error } = await sb.from('intern_reviews').insert(payload);
+  btn.disabled = false;
+
+  if (error) {
+    msg.textContent = 'Something went wrong — please try again.';
+    msg.className = 'form-msg';
+    console.error(error);
+    return;
+  }
+
+  msg.textContent = '✦ Review submitted! It\'ll appear after a quick moderation check (usually 24h).';
+  msg.className = 'form-msg success';
+  // Reset form
+  document.getElementById('f-company').value = '';
+  document.getElementById('f-role').value = '';
+  document.getElementById('f-body').value = '';
+  document.getElementById('f-pros').value = '';
+  document.getElementById('f-cons').value = '';
+  document.getElementById('f-stipend').value = '';
+  pickedRating = 0;
+  document.querySelectorAll('.rating-option').forEach(b => b.classList.remove('selected'));
+  toast('✦ Review submitted — thank you!');
+}
+
+// Close modal on backdrop click
+document.getElementById('review-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('review-modal')) closeModal();
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+loadReviews();
+</script>
+</body>
+</html>

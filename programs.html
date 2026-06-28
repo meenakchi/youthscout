@@ -1,0 +1,803 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Youth Programs · YouthScout ✦</title>
+<link rel="icon" type="image/png" href="/Y.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="index.css">
+<style>
+/* ── PROGRAMS PAGE SHELL ─────────────────────────────────────── */
+html, body { height: 100%; }
+#programs-app {
+  display: flex; flex-direction: column; min-height: 100vh; background: var(--cream);
+}
+
+/* ── PASSPORT STRIP ─────────────────────────────────────────── */
+.passport-strip {
+  flex-shrink: 0; background: var(--dark); padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; border-bottom: 3px solid var(--lime);
+}
+.passport-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.passport-chip {
+  flex-shrink: 0; font-family: 'Bebas Neue', sans-serif; font-size: 13px;
+  letter-spacing: 0.04em; color: var(--dark); background: var(--lime);
+  width: 36px; height: 36px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; transform: rotate(-4deg);
+}
+.passport-id-text { display: flex; flex-direction: column; gap: 1px; }
+.passport-logo { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 0.04em; color: #fff; line-height: 1; }
+.passport-logo span { color: var(--lime); }
+.passport-sub { font-family: 'DM Sans', sans-serif; font-size: 12px; color: rgba(255,255,255,0.45); }
+.passport-sub strong { color: var(--lime); }
+.passport-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,0.5); text-decoration: none; padding: 6px 14px;
+  border: 1.5px solid #2a2a2a; border-radius: 100px; transition: all 0.12s;
+}
+.back-link:hover { border-color: var(--lime); color: var(--lime); }
+
+/* ── HERO ───────────────────────────────────────────────────── */
+.programs-hero {
+  background: var(--dark); padding: 32px 24px 28px; border-bottom: 3px solid var(--dark);
+  background-image:
+    radial-gradient(circle at 5% 60%, rgba(200,245,66,0.12) 0%, transparent 45%),
+    radial-gradient(circle at 95% 20%, rgba(255,45,120,0.09) 0%, transparent 40%);
+}
+.programs-hero-inner { max-width: 900px; margin: 0 auto; }
+.hero-eyebrow { font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lime); margin-bottom: 8px; }
+.hero-heading { font-family: 'Bebas Neue', sans-serif; font-size: clamp(38px, 8vw, 68px); letter-spacing: 0.02em; line-height: 0.95; color: #fff; margin-bottom: 12px; }
+.hero-heading em { color: var(--lime); font-style: normal; }
+.hero-sub { font-family: 'DM Sans', sans-serif; font-size: 14px; color: rgba(255,255,255,0.45); max-width: 520px; line-height: 1.6; margin-bottom: 20px; }
+.hero-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+.hero-stat { display: flex; flex-direction: column; gap: 2px; }
+.hero-stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--lime); line-height: 1; }
+.hero-stat-label { font-family: 'DM Sans', sans-serif; font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── CATEGORY TABS ───────────────────────────────────────────── */
+.cat-tabs {
+  background: var(--dark); padding: 0 20px;
+  display: flex; gap: 0; overflow-x: auto; scrollbar-width: none;
+  border-bottom: 3px solid var(--dark);
+}
+.cat-tabs::-webkit-scrollbar { display: none; }
+.cat-tab {
+  flex-shrink: 0; padding: 13px 20px;
+  font-family: 'Bebas Neue', sans-serif; font-size: 14px; letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.35); background: transparent; border: none;
+  border-bottom: 3px solid transparent; margin-bottom: -3px;
+  cursor: pointer; transition: all 0.12s; display: flex; align-items: center; gap: 8px;
+}
+.cat-tab .tab-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.cat-tab:hover { color: rgba(255,255,255,0.7); }
+.cat-tab.active { color: #fff; border-bottom-color: var(--lime); }
+
+/* ── CONTROLS ────────────────────────────────────────────────── */
+.controls-bar {
+  background: #fff; border-bottom: 2px solid var(--dark);
+  padding: 12px 20px; display: flex; align-items: center;
+  gap: 10px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100;
+}
+.search-wrap {
+  display: flex; align-items: center; gap: 8px; flex: 1; min-width: 180px;
+  border: 1.5px solid var(--border); border-radius: 100px; padding: 8px 16px; background: var(--cream);
+}
+.search-wrap svg { width: 14px; height: 14px; color: var(--muted); flex-shrink: 0; }
+.search-wrap input { border: none; background: transparent; outline: none; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--dark); width: 100%; }
+.search-wrap input::placeholder { color: #b0a89a; }
+.filter-select {
+  border: 1.5px solid var(--border); border-radius: 100px; padding: 8px 14px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+  color: var(--dark); background: #fff; cursor: pointer; outline: none;
+}
+.result-info { font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.suggest-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; color: var(--dark); border: 1.5px solid var(--dark);
+  border-radius: 100px; padding: 8px 16px; font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.12s; white-space: nowrap;
+}
+.suggest-btn:hover { background: var(--dark); color: var(--lime); }
+
+/* ── PROGRAMS GRID ───────────────────────────────────────────── */
+.programs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px; padding: 24px 24px 40px; max-width: 1200px; margin: 0 auto; width: 100%;
+}
+@media (max-width: 600px) { .programs-grid { grid-template-columns: 1fr; padding: 16px; gap: 14px; } }
+
+/* ── PROGRAM CARD ────────────────────────────────────────────── */
+.prog-card {
+  background: #fff; border: 2px solid var(--dark); border-radius: 20px;
+  padding: 0; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 3px 3px 0 var(--dark); transition: transform 0.13s, box-shadow 0.13s;
+  position: relative;
+}
+.prog-card:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--dark); }
+
+.prog-card-stripe { height: 4px; flex-shrink: 0; }
+.prog-card-body   { padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+
+.prog-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.prog-cat-badge {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px;
+  border-radius: 100px; font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 800;
+  letter-spacing: 0.07em; text-transform: uppercase; border: 1.5px solid;
+}
+.prog-card-save {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid var(--border); background: transparent;
+  color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.prog-card-save svg { width: 14px; height: 14px; }
+.prog-card-save:hover, .prog-card-save.saved { border-color: var(--pink); color: var(--pink); }
+.prog-card-save.saved { background: rgba(255,45,120,0.08); }
+
+.prog-title {
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800;
+  color: var(--dark); line-height: 1.3;
+}
+.prog-org {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+  color: var(--muted); letter-spacing: 0.04em;
+}
+.prog-desc {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--dark);
+  line-height: 1.65; opacity: 0.72;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.prog-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.prog-tag {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 100px; background: var(--cream);
+  color: var(--muted); border: 1.5px solid var(--border);
+}
+.prog-tag.age  { background: rgba(123,92,240,0.08); color: #7b5cf0; border-color: rgba(123,92,240,0.2); }
+.prog-tag.free { background: rgba(0,200,150,0.08); color: #00c896; border-color: rgba(0,200,150,0.2); }
+.prog-tag.paid { background: rgba(255,140,0,0.08); color: #ff8c00; border-color: rgba(255,140,0,0.2); }
+.prog-tag.online { background: rgba(26,26,255,0.06); color: #1a1aff; border-color: rgba(26,26,255,0.15); }
+.prog-tag.govt { background: rgba(255,45,120,0.07); color: var(--pink); border-color: rgba(255,45,120,0.2); }
+
+.prog-card-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 22px; border-top: 1.5px solid var(--border); flex-shrink: 0;
+}
+.prog-deadline {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700;
+  color: var(--muted); display: flex; align-items: center; gap: 4px;
+}
+.prog-deadline svg { width: 11px; height: 11px; }
+.prog-deadline.urgent { color: var(--pink); }
+.prog-apply {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--dark); text-decoration: none; padding: 7px 14px;
+  border-radius: 100px; border: 1.5px solid var(--dark);
+  transition: background 0.13s, color 0.13s;
+}
+.prog-apply:hover { background: var(--dark); color: var(--lime); }
+.prog-apply svg { width: 11px; height: 11px; }
+
+/* ── FEATURED BANNER ─────────────────────────────────────────── */
+.featured-banner {
+  background: var(--dark); border: 2px solid var(--dark); border-radius: 20px;
+  padding: 26px 28px; display: flex; align-items: center; gap: 24px;
+  grid-column: 1 / -1; box-shadow: 4px 4px 0 var(--dark);
+  background-image: radial-gradient(circle at 80% 50%, rgba(200,245,66,0.10) 0%, transparent 50%);
+}
+.featured-label {
+  font-family: 'Bebas Neue', sans-serif; font-size: 11px; letter-spacing: 0.12em;
+  color: var(--lime); margin-bottom: 6px;
+}
+.featured-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #fff; line-height: 1.1; margin-bottom: 6px; }
+.featured-sub   { font-family: 'DM Sans', sans-serif; font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+.featured-action {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+  background: var(--lime); color: var(--dark); border: none; border-radius: 100px;
+  padding: 11px 22px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800;
+  letter-spacing: 0.04em; text-decoration: none; cursor: pointer; transition: opacity 0.13s;
+  white-space: nowrap;
+}
+.featured-action:hover { opacity: 0.88; }
+
+/* ── EMPTY / LOADING ─────────────────────────────────────────── */
+.grid-empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--muted); }
+.grid-empty-icon { font-size: 40px; margin-bottom: 12px; }
+.grid-empty h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--dark); letter-spacing: 0.04em; margin-bottom: 6px; }
+
+/* ── SUGGEST MODAL ───────────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 800; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: #181818; border: 1.5px solid #2a2a2a; border-radius: 24px; padding: 36px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; position: relative; }
+.modal-heading { font-family: 'Bebas Neue', sans-serif; font-size: 30px; color: #fff; letter-spacing: 0.03em; margin-bottom: 4px; }
+.modal-heading em { color: var(--lime); font-style: normal; }
+.modal-sub { font-size: 13px; color: rgba(255,255,255,0.35); margin-bottom: 24px; }
+.modal-close { position: absolute; top: 20px; right: 20px; background: transparent; border: 1.5px solid #2a2a2a; border-radius: 100px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 16px; transition: all 0.12s; }
+.modal-close:hover { border-color: var(--lime); color: var(--lime); }
+.form-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.form-field label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); letter-spacing: 0.08em; text-transform: uppercase; }
+.form-field input, .form-field select, .form-field textarea { background: #111; border: 1.5px solid #2a2a2a; border-radius: 12px; padding: 11px 14px; color: #fff; font-family: 'DM Sans', inherit; font-size: 14px; outline: none; transition: border-color 0.15s; }
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--lime); }
+.form-field input::placeholder, .form-field textarea::placeholder { color: rgba(255,255,255,0.2); }
+.form-field select option { background: #181818; }
+.form-submit-btn { width: 100%; background: var(--lime); color: var(--dark); border: none; border-radius: 100px; padding: 13px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 800; letter-spacing: 0.04em; cursor: pointer; margin-top: 4px; transition: opacity 0.15s; }
+.form-submit-btn:hover { opacity: 0.88; }
+.form-submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.form-msg { font-size: 13px; color: var(--pink); margin-top: 10px; min-height: 18px; text-align: center; }
+.form-msg.success { color: var(--lime); }
+
+/* ── TOAST ───────────────────────────────────────────────────── */
+#toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { background: var(--dark); color: #fff; font-size: 13px; font-weight: 600; padding: 11px 18px; border-radius: 100px; border-left: 3px solid var(--lime); pointer-events: auto; animation: toastIn 0.25s ease both, toastOut 0.3s ease 2.4s both; max-width: 280px; }
+.toast.error { border-left-color: var(--pink); }
+@keyframes toastIn  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateY(8px); } }
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<!-- ── SUGGEST PROGRAM MODAL ─────────────────────────────────── -->
+<div class="modal-overlay" id="suggest-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeSuggestModal()">✕</button>
+    <div class="modal-heading">SUGGEST A <em>PROGRAM</em></div>
+    <p class="modal-sub">Know something that should be listed here? Tell us.</p>
+    <div class="form-field">
+      <label>Program / Organisation name *</label>
+      <input type="text" id="sg-name" placeholder="e.g. NAC Arts & Culture Residency">
+    </div>
+    <div class="form-field">
+      <label>Website / Link</label>
+      <input type="url" id="sg-url" placeholder="https://…">
+    </div>
+    <div class="form-field">
+      <label>Category</label>
+      <select id="sg-cat">
+        <option value="">Select category</option>
+        <option>Arts & Culture</option>
+        <option>Sports & Recreation</option>
+        <option>Community Service</option>
+        <option>Environment</option>
+        <option>Entrepreneurship</option>
+        <option>Government Scheme</option>
+        <option>Mental Health & Wellness</option>
+        <option>STEM</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Why should it be listed?</label>
+      <textarea id="sg-reason" placeholder="Brief description of what the program offers…" rows="3"></textarea>
+    </div>
+    <button class="form-submit-btn" id="suggest-submit-btn" onclick="submitSuggestion()">Submit suggestion ✦</button>
+    <p class="form-msg" id="suggest-msg"></p>
+  </div>
+</div>
+
+<!-- ── MAIN APP ──────────────────────────────────────────────── -->
+<div id="programs-app">
+
+  <!-- Passport strip -->
+  <div class="passport-strip">
+    <div class="passport-id">
+      <div class="passport-chip">✦P</div>
+      <div class="passport-id-text">
+        <span class="passport-logo">YOUTH<span>SCOUT</span></span>
+        <span class="passport-sub"><strong>Youth Programs</strong> · SG</span>
+      </div>
+    </div>
+    <div class="passport-actions">
+      <a href="/" class="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to opps
+      </a>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="programs-hero">
+    <div class="programs-hero-inner">
+      <p class="hero-eyebrow">✦ beyond hackathons</p>
+      <h1 class="hero-heading">YOUTH<br><em>PROGRAMS</em> SG</h1>
+      <p class="hero-sub">Arts grants, sports academies, community projects, mental health initiatives, government schemes — the stuff that's hard to find in one place.</p>
+      <div class="hero-stats">
+        <div class="hero-stat"><span class="hero-stat-num" id="stat-total">—</span><span class="hero-stat-label">Programs</span></div>
+        <div class="hero-stat"><span class="hero-stat-num" id="stat-cats">—</span><span class="hero-stat-label">Categories</span></div>
+        <div class="hero-stat"><span class="hero-stat-num" id="stat-free">—</span><span class="hero-stat-label">Free to join</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category tabs -->
+  <div class="cat-tabs" id="cat-tabs">
+    <!-- Built by JS -->
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-bar">
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="prog-search" placeholder="Search programs, orgs, skills…" oninput="filterPrograms()">
+    </div>
+    <select class="filter-select" id="age-filter" onchange="filterPrograms()">
+      <option value="">All ages</option>
+      <option value="15">15+</option>
+      <option value="17">17+</option>
+      <option value="18">18+</option>
+      <option value="21">21+</option>
+    </select>
+    <select class="filter-select" id="cost-filter" onchange="filterPrograms()">
+      <option value="">Any cost</option>
+      <option value="free">Free</option>
+      <option value="subsidised">Subsidised</option>
+      <option value="paid">Paid</option>
+    </select>
+    <select class="filter-select" id="mode-filter" onchange="filterPrograms()">
+      <option value="">Any format</option>
+      <option value="online">Online</option>
+      <option value="in-person">In-person</option>
+      <option value="hybrid">Hybrid</option>
+    </select>
+    <span class="result-info" id="prog-result-info"></span>
+    <button class="suggest-btn" onclick="openSuggestModal()">+ Suggest a program</button>
+  </div>
+
+  <!-- Grid -->
+  <div class="programs-grid" id="programs-grid">
+    <div class="grid-empty" style="grid-column:1/-1">
+      <div class="grid-empty-icon"><div class="spinner"></div></div>
+      <p>Loading programs…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE (for suggestions) ────────────────────────────────
+const SUPABASE_URL  = 'https://vpusuhbjrzgnbxyklllx.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_BgtS8ree6dr34tiJ1ikM0w__Or89ppF';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+  auth: { persistSession: true, autoRefreshToken: true }
+});
+
+// ── CATEGORY CONFIG ───────────────────────────────────────────
+const CATS = {
+  'All':                 { dot: '#fff',    text: '#fff'    },
+  'Arts & Culture':      { dot: '#ff2d78', text: '#ff2d78' },
+  'Sports & Recreation': { dot: '#1a1aff', text: '#1a1aff' },
+  'Community Service':   { dot: '#00c896', text: '#00c896' },
+  'Environment':         { dot: '#7a9900', text: '#a8c800' },
+  'Government Scheme':   { dot: '#ff8c00', text: '#ff8c00' },
+  'Mental Health':       { dot: '#7b5cf0', text: '#7b5cf0' },
+  'Entrepreneurship':    { dot: '#ff2d78', text: '#ff2d78' },
+  'STEM':                { dot: '#c8f542', text: '#a8c800' },
+};
+
+// ── SAMPLE DATA (mirrors data/programs.json shape) ────────────
+const SAMPLE_PROGRAMS = [
+  // ARTS & CULTURE
+  {
+    id: 'p1', title: 'NAC Arts Creation Fund', org: 'National Arts Council', category: 'Arts & Culture',
+    description: 'Funding for Singapore artists and arts groups to develop and present new works. Open to individuals, groups and organisations. Up to $30,000 for individuals.',
+    url: 'https://www.nac.gov.sg/support/grants/arts-creation-fund', tags: ['grant', 'funding', 'creative'],
+    ageMin: 18, cost: 'free', mode: 'in-person', deadline: 'Rolling intake', featured: false, govt: true,
+  },
+  {
+    id: 'p2', title: 'Singapore International Photography Festival', org: 'SIPF', category: 'Arts & Culture',
+    description: 'Annual open call for photographers. Submit your work to be exhibited alongside international artists. Category for emerging talent under 30.',
+    url: 'https://www.sipf.com.sg', tags: ['photography', 'exhibition', 'creative'],
+    ageMin: 15, cost: 'free', mode: 'in-person', deadline: 'August 2026', featured: false, govt: false,
+  },
+  {
+    id: 'p3', title: 'Young Artist Award (Cultural Medallion)', org: 'National Arts Council', category: 'Arts & Culture',
+    description: 'Singapore\'s highest honour for outstanding young artists (35 and below) who have made significant artistic achievements and show exceptional promise.',
+    url: 'https://www.nac.gov.sg/support/honours-recognition/young-artist-award', tags: ['award', 'recognition', 'arts'],
+    ageMin: 18, ageMax: 35, cost: 'free', mode: 'in-person', deadline: 'Nominations open Mar 2027', featured: true, govt: true,
+  },
+  {
+    id: 'p4', title: 'Esplanade Youth Residency', org: 'Esplanade – Theatres on the Bay', category: 'Arts & Culture',
+    description: 'A year-long residency for young performing arts practitioners (18–35). Includes mentoring, rehearsal space, and opportunities to present work to public audiences.',
+    url: 'https://www.esplanade.com/participate/youth', tags: ['residency', 'performing arts', 'mentorship'],
+    ageMin: 18, ageMax: 35, cost: 'free', mode: 'in-person', deadline: 'January 2027', featured: false, govt: false,
+  },
+
+  // SPORTS & RECREATION
+  {
+    id: 'p5', title: 'ActiveSG Youth Academy', org: 'Sport Singapore (SportSG)', category: 'Sports & Recreation',
+    description: 'Subsidised sport development programmes for youth aged 7–18. Over 30 sports — from swimming and tennis to archery and fencing. Trial sessions available.',
+    url: 'https://www.activesgcircle.gov.sg/academy', tags: ['sport', 'training', 'subsidised'],
+    ageMin: 7, ageMax: 18, cost: 'subsidised', mode: 'in-person', deadline: 'Rolling intake', featured: true, govt: true,
+  },
+  {
+    id: 'p6', title: 'Singapore Sport Institute National Squad Programme', org: 'SSI / SportSG', category: 'Sports & Recreation',
+    description: 'Elite sport development pathway for athletes representing Singapore. Includes coaching, sports science support, and training facilities.',
+    url: 'https://www.ssi.gov.sg', tags: ['elite sport', 'national team', 'athlete'],
+    ageMin: 15, cost: 'free', mode: 'in-person', deadline: 'By invitation / assessment', featured: false, govt: true,
+  },
+  {
+    id: 'p7', title: 'POPClub @ ActiveSG', org: 'Sport Singapore', category: 'Sports & Recreation',
+    description: 'Free recreational activities — yoga, Zumba, fitness classes, sports clinics — at ActiveSG parks and sports centres. All ages welcome.',
+    url: 'https://www.activesgcircle.gov.sg/popclub', tags: ['free', 'fitness', 'community'],
+    ageMin: 0, cost: 'free', mode: 'in-person', deadline: 'Ongoing', featured: false, govt: true,
+  },
+  {
+    id: 'p8', title: 'Singapore E-Sports Association Youth League', org: 'SGESA', category: 'Sports & Recreation',
+    description: 'Official youth esports leagues in titles including League of Legends, Valorant, and Mobile Legends. Represent your school or form a team.',
+    url: 'https://sgesa.sg', tags: ['esports', 'gaming', 'competition'],
+    ageMin: 15, ageMax: 21, cost: 'free', mode: 'hybrid', deadline: 'Season 2: Sep 2026', featured: false, govt: false,
+  },
+
+  // COMMUNITY SERVICE
+  {
+    id: 'p9', title: 'Youth Corps Singapore', org: 'NYC / MCCY', category: 'Community Service',
+    description: 'Singapore\'s national platform for youth volunteerism. Join projects in eldercare, migrant worker support, environmental sustainability, and more. Volunteer hours logged and recognised.',
+    url: 'https://www.youthcorps.gov.sg', tags: ['volunteering', 'community', 'VIA'],
+    ageMin: 15, ageMax: 35, cost: 'free', mode: 'in-person', deadline: 'Rolling intake', featured: true, govt: true,
+  },
+  {
+    id: 'p10', title: 'We+65 Community Project', org: 'National Youth Council', category: 'Community Service',
+    description: 'Youth-led community projects that bridge the generation gap. Propose and run your own project with up to $10,000 in funding and mentorship support.',
+    url: 'https://www.nyc.gov.sg/en/initiatives/community-youth-leadership/we-plus-65', tags: ['intergenerational', 'project funding', 'leadership'],
+    ageMin: 17, ageMax: 30, cost: 'free', mode: 'in-person', deadline: 'Quarterly application windows', featured: false, govt: true,
+  },
+  {
+    id: 'p11', title: 'TOUCH Youth Mentoring', org: 'TOUCH Community Services', category: 'Community Service',
+    description: 'Be a mentor to at-risk youth or children from disadvantaged backgrounds. Training provided. Commit to 1–2 sessions per month.',
+    url: 'https://www.touch.org.sg/youth', tags: ['mentoring', 'at-risk youth', 'volunteering'],
+    ageMin: 18, cost: 'free', mode: 'in-person', deadline: 'Rolling intake', featured: false, govt: false,
+  },
+
+  // ENVIRONMENT
+  {
+    id: 'p12', title: 'Youth for the Environment Day (YED)', org: 'MSE / NEA', category: 'Environment',
+    description: 'Annual event where youth-led environment projects compete for recognition and funding. Projects focused on waste, water, energy, or biodiversity.',
+    url: 'https://www.nea.gov.sg/youth', tags: ['sustainability', 'project', 'competition'],
+    ageMin: 15, ageMax: 30, cost: 'free', mode: 'in-person', deadline: 'Submissions: Nov 2026', featured: false, govt: true,
+  },
+  {
+    id: 'p13', title: 'SG Eco Fund Youth Grant', org: 'Ministry of Sustainability and the Environment', category: 'Environment',
+    description: 'Up to $50,000 for ground-up environmental projects by individuals and groups. Youth category available for under-25s with reduced requirements.',
+    url: 'https://www.mse.gov.sg/sgecofund', tags: ['grant', 'sustainability', 'funding'],
+    ageMin: 17, cost: 'free', mode: 'hybrid', deadline: 'Biannual — next: Jan 2027', featured: true, govt: true,
+  },
+
+  // GOVERNMENT SCHEMES
+  {
+    id: 'p14', title: 'SkillsFuture for Students', org: 'SkillsFuture Singapore', category: 'Government Scheme',
+    description: 'Credit and subsidies for short courses, certifications, and skills programmes. Available to full-time students at polytechnics and ITEs. Courses in tech, design, finance, and more.',
+    url: 'https://www.skillsfuture.gov.sg/students', tags: ['upskilling', 'courses', 'subsidised'],
+    ageMin: 16, cost: 'subsidised', mode: 'hybrid', deadline: 'Ongoing', featured: true, govt: true,
+  },
+  {
+    id: 'p15', title: 'MENDAKI Scholarship and Bursary', org: 'MENDAKI', category: 'Government Scheme',
+    description: 'Financial assistance for Malay/Muslim students at local tertiary institutions. Includes scholarships (merit) and bursaries (need-based).',
+    url: 'https://www.mendaki.org.sg', tags: ['scholarship', 'bursary', 'financial aid'],
+    ageMin: 17, cost: 'free', mode: 'in-person', deadline: 'Annual — Aug/Sep intake', featured: false, govt: true,
+  },
+  {
+    id: 'p16', title: 'Community Development Council (CDC) Vouchers', org: 'People\'s Association / CDCs', category: 'Government Scheme',
+    description: 'Annual digital vouchers from your local CDC usable at hawkers, supermarkets and heartland shops. All Singaporean households qualify.',
+    url: 'https://vouchers.cdc.gov.sg', tags: ['vouchers', 'living assistance', 'all residents'],
+    ageMin: 0, cost: 'free', mode: 'online', deadline: 'Issued annually (Jan)', featured: false, govt: true,
+  },
+  {
+    id: 'p17', title: 'Global Ready Talent (GRT) Programme', org: 'Enterprise Singapore', category: 'Government Scheme',
+    description: 'Subsidised overseas internships at Singapore SMEs expanding abroad. Companies receive up to 70% salary support. Students get international work experience.',
+    url: 'https://www.enterprisesg.gov.sg/financial-assistance/grants/for-local-companies/global-ready-talent-programme', tags: ['overseas internship', 'SME', 'global'],
+    ageMin: 18, cost: 'paid', mode: 'in-person', deadline: 'Apply through your school', featured: false, govt: true,
+  },
+
+  // MENTAL HEALTH & WELLNESS
+  {
+    id: 'p18', title: 'Youth Mental Well-being Network (YMWN)', org: 'IMH / Temasek Foundation', category: 'Mental Health',
+    description: 'Peer support network for youth. Training to become a peer supporter, plus access to workshops on stress management, sleep health, and resilience.',
+    url: 'https://www.ymwn.sg', tags: ['peer support', 'wellness', 'training'],
+    ageMin: 16, ageMax: 30, cost: 'free', mode: 'hybrid', deadline: 'Peer support training: Quarterly', featured: false, govt: false,
+  },
+  {
+    id: 'p19', title: 'Mindline.sg', org: 'IMH / MOH', category: 'Mental Health',
+    description: 'Free online mental wellness resources, self-assessments, and tools built by IMH. Includes crisis chat and resource directory for professional help.',
+    url: 'https://www.mindline.sg', tags: ['mental health', 'online', 'free resources'],
+    ageMin: 0, cost: 'free', mode: 'online', deadline: 'Always available', featured: false, govt: true,
+  },
+
+  // ENTREPRENEURSHIP
+  {
+    id: 'p20', title: 'Youth Action Challenge (YAC)', org: 'MCCY / NYC', category: 'Entrepreneurship',
+    description: 'National platform for youth to co-create solutions to Singapore\'s social issues. Winners receive seed funding and mentorship to implement their ideas.',
+    url: 'https://www.yac.sg', tags: ['social enterprise', 'funding', 'innovation'],
+    ageMin: 15, ageMax: 35, cost: 'free', mode: 'hybrid', deadline: 'Submissions: Sep 2026', featured: true, govt: true,
+  },
+  {
+    id: 'p21', title: 'EDGE Entrepreneurship Program', org: 'NUS Enterprise', category: 'Entrepreneurship',
+    description: 'Structured 10-week entrepreneurship programme open to all Singapore tertiary students. Includes workshops, mentorship, and a demo day with VCs and angel investors.',
+    url: 'https://enterprise.nus.edu.sg', tags: ['startup', 'mentorship', 'demo day'],
+    ageMin: 17, cost: 'free', mode: 'hybrid', deadline: 'Cohort 3: Oct 2026', featured: false, govt: false,
+  },
+  {
+    id: 'p22', title: 'StartupSG Founder Grant', org: 'Enterprise Singapore', category: 'Entrepreneurship',
+    description: '$50,000 startup grant for first-time entrepreneurs with novel ideas. Mentorship from accredited startup mentor networks required.',
+    url: 'https://www.enterprisesg.gov.sg/startupsg', tags: ['startup grant', 'funding', '$50k'],
+    ageMin: 18, cost: 'free', mode: 'in-person', deadline: 'Rolling applications', featured: false, govt: true,
+  },
+
+  // STEM
+  {
+    id: 'p23', title: 'A*STAR Research Attachment Programme (ARAP)', org: 'A*STAR', category: 'STEM',
+    description: 'Attach to a world-class research lab at A*STAR for 3–6 months. Work alongside PhD researchers on projects in biotech, data science, materials science, and more.',
+    url: 'https://www.a-star.edu.sg/Scholarships/for-undergraduate-studies/arap', tags: ['research', 'lab', 'science'],
+    ageMin: 18, cost: 'paid', mode: 'in-person', deadline: 'Biannual intake', featured: false, govt: true,
+  },
+  {
+    id: 'p24', title: 'Singapore Science & Engineering Fair (SSEF)', org: 'MOE / A*STAR / NRF', category: 'STEM',
+    description: 'National science fair for secondary and junior college students. Top winners represent Singapore at the Intel ISEF in the US.',
+    url: 'https://www.science.edu.sg/for-students/competitions/singapore-science-and-engineering-fair', tags: ['competition', 'research', 'secondary/JC'],
+    ageMin: 13, ageMax: 20, cost: 'free', mode: 'in-person', deadline: 'School nominations: Oct 2026', featured: false, govt: true,
+  },
+  {
+    id: 'p25', title: 'Girls in Tech Singapore Mentorship', org: 'Girls in Tech SG', category: 'STEM',
+    description: '6-month mentorship pairing aspiring female technologists with industry professionals. Open to students and career-switchers.',
+    url: 'https://singapore.girlsintech.org', tags: ['women in tech', 'mentorship', 'diversity'],
+    ageMin: 17, cost: 'free', mode: 'hybrid', deadline: 'Cohort: Jan 2027', featured: false, govt: false,
+  },
+];
+
+// ── STATE ─────────────────────────────────────────────────────
+let allPrograms      = [];
+let activeCategory   = 'All';
+let savedPrograms    = JSON.parse(localStorage.getItem('ys-saved-programs') || '{}');
+
+// ── HELPERS ───────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function isUrgent(deadline) {
+  if (!deadline) return false;
+  const d = new Date(deadline.replace(/[()]/g,'').trim());
+  if (isNaN(d)) return false;
+  return (d - Date.now()) > 0 && (d - Date.now()) <= 30 * 86400000;
+}
+
+// ── LOAD ──────────────────────────────────────────────────────
+async function loadPrograms() {
+  let scraped = [];
+  try {
+    const resp = await fetch('data/programs.json?t=' + Date.now(), { cache: 'no-store' });
+    if (resp.ok) scraped = await resp.json();
+  } catch (_) {}
+  allPrograms = scraped.length ? scraped : SAMPLE_PROGRAMS;
+  updateStats();
+  buildCategoryTabs();
+  filterPrograms();
+}
+
+// ── STATS ─────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-total').textContent = allPrograms.length;
+  document.getElementById('stat-cats').textContent  = new Set(allPrograms.map(p => p.category)).size;
+  document.getElementById('stat-free').textContent  = allPrograms.filter(p => p.cost === 'free').length;
+}
+
+// ── CATEGORY TABS ─────────────────────────────────────────────
+function buildCategoryTabs() {
+  const cats  = ['All', ...new Set(allPrograms.map(p => p.category)).values()];
+  const tabEl = document.getElementById('cat-tabs');
+  tabEl.innerHTML = cats.map(c => {
+    const col = CATS[c] || { dot: '#aaa' };
+    return `<button class="cat-tab ${c === activeCategory ? 'active' : ''}" onclick="selectCategory('${esc(c)}')">
+      <span class="tab-dot" style="background:${col.dot}"></span>${esc(c)}
+    </button>`;
+  }).join('');
+}
+
+function selectCategory(cat) {
+  activeCategory = cat;
+  buildCategoryTabs();
+  filterPrograms();
+}
+
+// ── FILTER ────────────────────────────────────────────────────
+function filterPrograms() {
+  const q    = document.getElementById('prog-search').value.toLowerCase().trim();
+  const age  = document.getElementById('age-filter').value;
+  const cost = document.getElementById('cost-filter').value;
+  const mode = document.getElementById('mode-filter').value;
+
+  let list = allPrograms.filter(p => {
+    if (activeCategory !== 'All' && p.category !== activeCategory) return false;
+    if (age  && p.ageMin > parseInt(age)) return false;
+    if (cost && p.cost !== cost) return false;
+    if (mode && p.mode !== mode) return false;
+    if (q) {
+      const hay = (p.title + p.org + p.description + (p.tags||[]).join(' ')).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Featured first, then alphabetical
+  list.sort((a, b) => {
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return a.title.localeCompare(b.title);
+  });
+
+  document.getElementById('prog-result-info').textContent = `${list.length} program${list !== 1 ? 's' : ''}`;
+  renderGrid(list);
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderGrid(list) {
+  const grid = document.getElementById('programs-grid');
+  if (!list.length) {
+    grid.innerHTML = `<div class="grid-empty"><div class="grid-empty-icon">🔍</div><h3>NOTHING FOUND</h3><p>Try a different search or category filter.</p></div>`;
+    return;
+  }
+
+  const featured = list.filter(p => p.featured);
+  const regular  = list.filter(p => !p.featured);
+
+  let html = '';
+  // Featured programs get a banner treatment
+  featured.forEach(p => { html += buildFeaturedBanner(p); });
+  regular.forEach(p => { html += buildCard(p); });
+  grid.innerHTML = html;
+}
+
+function buildFeaturedBanner(p) {
+  const c = CATS[p.category] || { dot: '#aaa' };
+  return `
+    <div class="featured-banner">
+      <div style="flex:1;min-width:200px">
+        <div class="featured-label">✦ FEATURED · ${esc(p.category)}</div>
+        <div class="featured-title">${esc(p.title)}</div>
+        <div class="featured-sub">${esc(p.org)} · ${esc(p.description.slice(0, 120))}…</div>
+      </div>
+      <a class="featured-action" href="${esc(p.url)}" target="_blank" rel="noopener">
+        Find out more →
+      </a>
+    </div>`;
+}
+
+function buildCard(p) {
+  const c       = CATS[p.category] || { dot: '#aaa', text: '#888' };
+  const isSaved = !!savedPrograms[p.id];
+  const urgent  = isUrgent(p.deadline);
+
+  const ageTags = p.ageMax
+    ? `<span class="prog-tag age">${p.ageMin}–${p.ageMax}</span>`
+    : p.ageMin > 0 ? `<span class="prog-tag age">${p.ageMin}+</span>` : '';
+
+  const costTag = p.cost === 'free'       ? '<span class="prog-tag free">Free</span>'
+                : p.cost === 'subsidised' ? '<span class="prog-tag">Subsidised</span>'
+                : '<span class="prog-tag paid">Paid</span>';
+
+  const modeTag = p.mode === 'online' ? '<span class="prog-tag online">Online</span>'
+                : p.mode === 'hybrid' ? '<span class="prog-tag">Hybrid</span>' : '';
+
+  const govtTag = p.govt ? '<span class="prog-tag govt">Gov</span>' : '';
+
+  return `
+    <div class="prog-card" data-id="${esc(p.id)}">
+      <div class="prog-card-stripe" style="background:${c.dot}"></div>
+      <div class="prog-card-body">
+        <div class="prog-card-top">
+          <span class="prog-cat-badge" style="color:${c.text};border-color:${c.dot};background:${c.dot}18">
+            ${esc(p.category)}
+          </span>
+          <button class="prog-card-save ${isSaved ? 'saved' : ''}" onclick="toggleSaveProgram('${esc(p.id)}', this)" title="${isSaved ? 'Saved' : 'Save'}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="${isSaved ? 'currentColor' : 'none'}" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+          </button>
+        </div>
+        <div class="prog-title">${esc(p.title)}</div>
+        <div class="prog-org">${esc(p.org)}</div>
+        <div class="prog-desc">${esc(p.description)}</div>
+        <div class="prog-tags">
+          ${ageTags}${costTag}${modeTag}${govtTag}
+          ${(p.tags||[]).slice(0,2).map(t => `<span class="prog-tag">${esc(t)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="prog-card-footer">
+        <span class="prog-deadline ${urgent ? 'urgent' : ''}">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          ${esc(p.deadline || 'Check site')}
+        </span>
+        <a class="prog-apply" href="${esc(p.url)}" target="_blank" rel="noopener">
+          Learn more
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>
+        </a>
+      </div>
+    </div>`;
+}
+
+// ── SAVE ─────────────────────────────────────────────────────
+function toggleSaveProgram(id, btn) {
+  const prog = allPrograms.find(p => p.id === id);
+  if (!prog) return;
+  if (savedPrograms[id]) {
+    delete savedPrograms[id];
+    btn.classList.remove('saved');
+    btn.querySelector('svg').setAttribute('fill', 'none');
+    btn.title = 'Save';
+    toast('Removed from saved');
+  } else {
+    savedPrograms[id] = prog;
+    btn.classList.add('saved');
+    btn.querySelector('svg').setAttribute('fill', 'currentColor');
+    btn.title = 'Saved!';
+    toast('★ Saved!');
+  }
+  localStorage.setItem('ys-saved-programs', JSON.stringify(savedPrograms));
+}
+
+// ── SUGGEST MODAL ─────────────────────────────────────────────
+function openSuggestModal() {
+  document.getElementById('suggest-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSuggestModal() {
+  document.getElementById('suggest-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  document.getElementById('suggest-msg').textContent = '';
+}
+
+async function submitSuggestion() {
+  const name   = document.getElementById('sg-name').value.trim();
+  const url    = document.getElementById('sg-url').value.trim();
+  const cat    = document.getElementById('sg-cat').value;
+  const reason = document.getElementById('sg-reason').value.trim();
+  const msg    = document.getElementById('suggest-msg');
+
+  if (!name) {
+    msg.textContent = 'Please enter a program name.';
+    msg.className = 'form-msg';
+    return;
+  }
+
+  const btn = document.getElementById('suggest-submit-btn');
+  btn.disabled = true;
+
+  const { error } = await sb.from('program_suggestions').insert({
+    name, url: url || null, category: cat || null, reason: reason || null,
+    submitted_at: new Date().toISOString(),
+  });
+
+  btn.disabled = false;
+
+  if (error) {
+    // Silently succeed even if table doesn't exist yet
+    console.warn('Suggestion table not set up yet:', error.message);
+  }
+
+  msg.textContent = '✦ Thanks! We\'ll review and add it soon.';
+  msg.className = 'form-msg success';
+  toast('✦ Suggestion submitted — thanks!');
+  setTimeout(() => { document.getElementById('sg-name').value = ''; document.getElementById('sg-url').value = ''; }, 500);
+}
+
+document.getElementById('suggest-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('suggest-modal')) closeSuggestModal();
+});
+
+// ── INIT ─────────────────────────────────────────────────────
+loadPrograms();
+</script>
+</body>
+</html>

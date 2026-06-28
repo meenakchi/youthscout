@@ -111,6 +111,9 @@
       </div>
     </div>
     <div class="passport-actions">
+      <a class="picon-btn" href="reviews.html" title="Intern Reviews">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+      </a>
       <button class="picon-btn" id="notif-btn" onclick="toggleNotifications()" title="Notifications">
         🕭<span class="notif-badge" id="notif-badge"></span>
       </button>
@@ -258,6 +261,7 @@ html, body { height: 100%; }
   cursor: pointer;
   transition: all 0.12s;
   flex-shrink: 0;
+  text-decoration: none;
 }
 .picon-btn svg { width: 15px; height: 15px; }
 .picon-btn:hover { border-color: var(--lime); color: var(--lime); }
@@ -791,8 +795,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
   }
 });
 
-const DATA_URL    = 'data/opportunities.json';
-const URGENT_DAYS = 30;
+const DATA_URL     = 'data/opportunities.json';
+const PROGRAMS_URL = 'data/programs.json';
+const URGENT_DAYS  = 30;
 
 // ── CATEGORY COLOURS ──────────────────────────────────────────────────────
 const CAT_COLORS = {
@@ -803,6 +808,14 @@ const CAT_COLORS = {
   'internship':    { bg: 'rgba(0,200,150,0.1)',   text: '#00c896', dot: '#00c896' },
   'competition':   { bg: 'rgba(255,45,120,0.1)',  text: '#ff2d78', dot: '#ff2d78' },
   'youth program': { bg: 'rgba(200,245,66,0.15)', text: '#7a9900', dot: '#a8c800' },
+  'arts & culture':        { bg: 'rgba(255,45,120,0.1)',  text: '#ff2d78', dot: '#ff2d78' },
+  'sports & recreation':   { bg: 'rgba(26,26,255,0.08)',  text: '#1a1aff', dot: '#1a1aff' },
+  'community service':     { bg: 'rgba(0,200,150,0.1)',   text: '#00c896', dot: '#00c896' },
+  'environment':           { bg: 'rgba(168,200,0,0.12)',  text: '#7a9900', dot: '#a8c800' },
+  'government scheme':     { bg: 'rgba(255,140,0,0.1)',   text: '#ff8c00', dot: '#ff8c00' },
+  'mental health':         { bg: 'rgba(123,92,240,0.1)',  text: '#7b5cf0', dot: '#7b5cf0' },
+  'entrepreneurship':      { bg: 'rgba(255,45,120,0.1)',  text: '#ff2d78', dot: '#ff2d78' },
+  'stem':                  { bg: 'rgba(200,245,66,0.15)', text: '#7a9900', dot: '#c8f542' },
   'other':         { bg: 'rgba(0,0,0,0.05)',      text: '#888',    dot: '#aaa'    },
 };
 function catKey(cat) { return (cat || 'other').toLowerCase(); }
@@ -891,6 +904,35 @@ const SAMPLE_DATA = [
   { id:'s7', title:'YMCA Youth Leadership Academy', source:'YMCA Singapore', url:'https://www.ymca.org.sg', description:'Develop your leadership potential through workshops and community projects.', deadline:'Rolling intake', eligibility:'Ages 17-25, Singapore residents', category:'Leadership', location:'Singapore', date_found:'2026-06-01T00:00:00' },
   { id:'s8', title:'Hack For Good 2026', source:'Devpost', url:'https://devpost.com', description:'48-hour hackathon focused on building tech solutions for social good.', deadline:'July 2026', eligibility:'Open to all, teams of up to 4', category:'Hackathon', location:'Singapore', date_found:'2026-06-01T00:00:00' },
   { id:'s9', title:'AI Singapore AIAP', source:'AI Singapore', url:'https://aisingapore.org/research/aiap/', description:'9-month applied AI programme. Build production-grade ML models with mentorship from senior AI engineers.', deadline:'Rolling intake', eligibility:'Fresh grads / career switchers with coding background', category:'Bootcamp', location:'Singapore', date_found:'2026-06-01T00:00:00' },
+];
+
+// ── SAMPLE PROGRAMS (mirrors data/programs.json; merged into the swipe deck) ─
+const SAMPLE_PROGRAMS = [
+  { id: 'p1', title: 'NAC Arts Creation Fund', source: 'National Arts Council', category: 'Arts & Culture', description: 'Funding for Singapore artists and arts groups to develop and present new works. Open to individuals, groups and organisations. Up to $30,000 for individuals.', url: 'https://www.nac.gov.sg/support/grants/arts-creation-fund', eligibility: '18+', location: 'Singapore', deadline: 'Rolling intake', date_found: '2026-06-01T00:00:00' },
+  { id: 'p2', title: 'Singapore International Photography Festival', source: 'SIPF', category: 'Arts & Culture', description: 'Annual open call for photographers. Submit your work to be exhibited alongside international artists. Category for emerging talent under 30.', url: 'https://www.sipf.com.sg', eligibility: '15+', location: 'Singapore', deadline: 'August 2026', date_found: '2026-06-01T00:00:00' },
+  { id: 'p3', title: 'Young Artist Award (Cultural Medallion)', source: 'National Arts Council', category: 'Arts & Culture', description: "Singapore's highest honour for outstanding young artists (35 and below) who have made significant artistic achievements and show exceptional promise.", url: 'https://www.nac.gov.sg/support/honours-recognition/young-artist-award', eligibility: '18-35', location: 'Singapore', deadline: 'Nominations open Mar 2027', date_found: '2026-06-01T00:00:00' },
+  { id: 'p4', title: 'Esplanade Youth Residency', source: 'Esplanade – Theatres on the Bay', category: 'Arts & Culture', description: 'A year-long residency for young performing arts practitioners (18–35). Includes mentoring, rehearsal space, and opportunities to present work to public audiences.', url: 'https://www.esplanade.com/participate/youth', eligibility: '18-35', location: 'Singapore', deadline: 'January 2027', date_found: '2026-06-01T00:00:00' },
+  { id: 'p5', title: 'ActiveSG Youth Academy', source: 'Sport Singapore (SportSG)', category: 'Sports & Recreation', description: 'Subsidised sport development programmes for youth aged 7–18. Over 30 sports — from swimming and tennis to archery and fencing. Trial sessions available.', url: 'https://www.activesgcircle.gov.sg/academy', eligibility: '7-18', location: 'Singapore', deadline: 'Rolling intake', date_found: '2026-06-01T00:00:00' },
+  { id: 'p6', title: 'Singapore Sport Institute National Squad Programme', source: 'SSI / SportSG', category: 'Sports & Recreation', description: 'Elite sport development pathway for athletes representing Singapore. Includes coaching, sports science support, and training facilities.', url: 'https://www.ssi.gov.sg', eligibility: '15+', location: 'Singapore', deadline: 'By invitation / assessment', date_found: '2026-06-01T00:00:00' },
+  { id: 'p7', title: 'POPClub @ ActiveSG', source: 'Sport Singapore', category: 'Sports & Recreation', description: 'Free recreational activities — yoga, Zumba, fitness classes, sports clinics — at ActiveSG parks and sports centres. All ages welcome.', url: 'https://www.activesgcircle.gov.sg/popclub', eligibility: 'All ages', location: 'Singapore', deadline: 'Ongoing', date_found: '2026-06-01T00:00:00' },
+  { id: 'p8', title: 'Singapore E-Sports Association Youth League', source: 'SGESA', category: 'Sports & Recreation', description: 'Official youth esports leagues in titles including League of Legends, Valorant, and Mobile Legends. Represent your school or form a team.', url: 'https://sgesa.sg', eligibility: '15-21', location: 'Singapore', deadline: 'Season 2: Sep 2026', date_found: '2026-06-01T00:00:00' },
+  { id: 'p9', title: 'Youth Corps Singapore', source: 'NYC / MCCY', category: 'Community Service', description: "Singapore's national platform for youth volunteerism. Join projects in eldercare, migrant worker support, environmental sustainability, and more. Volunteer hours logged and recognised.", url: 'https://www.youthcorps.gov.sg', eligibility: '15-35', location: 'Singapore', deadline: 'Rolling intake', date_found: '2026-06-01T00:00:00' },
+  { id: 'p10', title: 'We+65 Community Project', source: 'National Youth Council', category: 'Community Service', description: 'Youth-led community projects that bridge the generation gap. Propose and run your own project with up to $10,000 in funding and mentorship support.', url: 'https://www.nyc.gov.sg/en/initiatives/community-youth-leadership/we-plus-65', eligibility: '17-30', location: 'Singapore', deadline: 'Quarterly application windows', date_found: '2026-06-01T00:00:00' },
+  { id: 'p11', title: 'TOUCH Youth Mentoring', source: 'TOUCH Community Services', category: 'Community Service', description: 'Be a mentor to at-risk youth or children from disadvantaged backgrounds. Training provided. Commit to 1–2 sessions per month.', url: 'https://www.touch.org.sg/youth', eligibility: '18+', location: 'Singapore', deadline: 'Rolling intake', date_found: '2026-06-01T00:00:00' },
+  { id: 'p12', title: 'Youth for the Environment Day (YED)', source: 'MSE / NEA', category: 'Environment', description: 'Annual event where youth-led environment projects compete for recognition and funding. Projects focused on waste, water, energy, or biodiversity.', url: 'https://www.nea.gov.sg/youth', eligibility: '15-30', location: 'Singapore', deadline: 'Submissions: Nov 2026', date_found: '2026-06-01T00:00:00' },
+  { id: 'p13', title: 'SG Eco Fund Youth Grant', source: 'Ministry of Sustainability and the Environment', category: 'Environment', description: 'Up to $50,000 for ground-up environmental projects by individuals and groups. Youth category available for under-25s with reduced requirements.', url: 'https://www.mse.gov.sg/sgecofund', eligibility: '17+', location: 'Singapore', deadline: 'Biannual — next: Jan 2027', date_found: '2026-06-01T00:00:00' },
+  { id: 'p14', title: 'SkillsFuture for Students', source: 'SkillsFuture Singapore', category: 'Government Scheme', description: 'Credit and subsidies for short courses, certifications, and skills programmes. Available to full-time students at polytechnics and ITEs. Courses in tech, design, finance, and more.', url: 'https://www.skillsfuture.gov.sg/students', eligibility: '16+', location: 'Singapore', deadline: 'Ongoing', date_found: '2026-06-01T00:00:00' },
+  { id: 'p15', title: 'MENDAKI Scholarship and Bursary', source: 'MENDAKI', category: 'Government Scheme', description: 'Financial assistance for Malay/Muslim students at local tertiary institutions. Includes scholarships (merit) and bursaries (need-based).', url: 'https://www.mendaki.org.sg', eligibility: '17+', location: 'Singapore', deadline: 'Annual — Aug/Sep intake', date_found: '2026-06-01T00:00:00' },
+  { id: 'p16', title: "Community Development Council (CDC) Vouchers", source: "People's Association / CDCs", category: 'Government Scheme', description: 'Annual digital vouchers from your local CDC usable at hawkers, supermarkets and heartland shops. All Singaporean households qualify.', url: 'https://vouchers.cdc.gov.sg', eligibility: 'All residents', location: 'Singapore', deadline: 'Issued annually (Jan)', date_found: '2026-06-01T00:00:00' },
+  { id: 'p17', title: 'Global Ready Talent (GRT) Programme', source: 'Enterprise Singapore', category: 'Government Scheme', description: 'Subsidised overseas internships at Singapore SMEs expanding abroad. Companies receive up to 70% salary support. Students get international work experience.', url: 'https://www.enterprisesg.gov.sg/financial-assistance/grants/for-local-companies/global-ready-talent-programme', eligibility: '18+', location: 'Overseas (SME-hosted)', deadline: 'Apply through your school', date_found: '2026-06-01T00:00:00' },
+  { id: 'p18', title: 'Youth Mental Well-being Network (YMWN)', source: 'IMH / Temasek Foundation', category: 'Mental Health', description: 'Peer support network for youth. Training to become a peer supporter, plus access to workshops on stress management, sleep health, and resilience.', url: 'https://www.ymwn.sg', eligibility: '16-30', location: 'Singapore', deadline: 'Peer support training: Quarterly', date_found: '2026-06-01T00:00:00' },
+  { id: 'p19', title: 'Mindline.sg', source: 'IMH / MOH', category: 'Mental Health', description: 'Free online mental wellness resources, self-assessments, and tools built by IMH. Includes crisis chat and resource directory for professional help.', url: 'https://www.mindline.sg', eligibility: 'All ages', location: 'Online', deadline: 'Always available', date_found: '2026-06-01T00:00:00' },
+  { id: 'p20', title: 'Youth Action Challenge (YAC)', source: 'MCCY / NYC', category: 'Entrepreneurship', description: "National platform for youth to co-create solutions to Singapore's social issues. Winners receive seed funding and mentorship to implement their ideas.", url: 'https://www.yac.sg', eligibility: '15-35', location: 'Singapore', deadline: 'Submissions: Sep 2026', date_found: '2026-06-01T00:00:00' },
+  { id: 'p21', title: 'EDGE Entrepreneurship Program', source: 'NUS Enterprise', category: 'Entrepreneurship', description: 'Structured 10-week entrepreneurship programme open to all Singapore tertiary students. Includes workshops, mentorship, and a demo day with VCs and angel investors.', url: 'https://enterprise.nus.edu.sg', eligibility: '17+', location: 'Singapore', deadline: 'Cohort 3: Oct 2026', date_found: '2026-06-01T00:00:00' },
+  { id: 'p22', title: 'StartupSG Founder Grant', source: 'Enterprise Singapore', category: 'Entrepreneurship', description: '$50,000 startup grant for first-time entrepreneurs with novel ideas. Mentorship from accredited startup mentor networks required.', url: 'https://www.enterprisesg.gov.sg/startupsg', eligibility: '18+', location: 'Singapore', deadline: 'Rolling applications', date_found: '2026-06-01T00:00:00' },
+  { id: 'p23', title: 'A*STAR Research Attachment Programme (ARAP)', source: 'A*STAR', category: 'STEM', description: 'Attach to a world-class research lab at A*STAR for 3–6 months. Work alongside PhD researchers on projects in biotech, data science, materials science, and more.', url: 'https://www.a-star.edu.sg/Scholarships/for-undergraduate-studies/arap', eligibility: '18+', location: 'Singapore', deadline: 'Biannual intake', date_found: '2026-06-01T00:00:00' },
+  { id: 'p24', title: 'Singapore Science & Engineering Fair (SSEF)', source: 'MOE / A*STAR / NRF', category: 'STEM', description: 'National science fair for secondary and junior college students. Top winners represent Singapore at the Intel ISEF in the US.', url: 'https://www.science.edu.sg/for-students/competitions/singapore-science-and-engineering-fair', eligibility: '13-20', location: 'Singapore', deadline: 'School nominations: Oct 2026', date_found: '2026-06-01T00:00:00' },
+  { id: 'p25', title: 'Girls in Tech Singapore Mentorship', source: 'Girls in Tech SG', category: 'STEM', description: '6-month mentorship pairing aspiring female technologists with industry professionals. Open to students and career-switchers.', url: 'https://singapore.girlsintech.org', eligibility: '17+', location: 'Singapore', deadline: 'Cohort: Jan 2027', date_found: '2026-06-01T00:00:00' },
 ];
 
 // ── GATE SEARCH TOGGLE ──────────────────────────────────────────────────────
@@ -1449,6 +1491,9 @@ async function loadData() {
     '<div class="loading"><div class="spinner"></div> Loading opportunities…</div>';
   document.getElementById('swipe-actions').style.display = 'none';
   document.getElementById('swipe-progress').style.display = 'none';
+
+  // Fetch the regular opportunities feed (hackathons, fellowships, etc.)
+  let opps;
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // never hang forever
@@ -1457,11 +1502,28 @@ async function loadData() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const raw = await resp.json();
     if (!Array.isArray(raw) || !raw.length) throw new Error('Empty data');
-    allOpps = raw.filter(o => !isJunk(o));
+    opps = raw.filter(o => !isJunk(o));
   } catch (err) {
-    console.warn('Data fetch failed, using sample data:', err.message);
-    allOpps = SAMPLE_DATA;
+    console.warn('Opportunities fetch failed, using sample data:', err.message);
+    opps = SAMPLE_DATA;
   }
+
+  // Fetch the youth-programs feed and merge it into the same swipeable deck.
+  // Programs use the exact same card shape (title/source/category/description/
+  // url/deadline/eligibility/location/date_found) so they slot right in.
+  let programs;
+  try {
+    const resp = await fetch(PROGRAMS_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const raw = await resp.json();
+    programs = Array.isArray(raw) && raw.length ? raw.filter(o => !isJunk(o)) : SAMPLE_PROGRAMS;
+  } catch (err) {
+    console.warn('Programs fetch failed, using sample programs:', err.message);
+    programs = SAMPLE_PROGRAMS;
+  }
+
+  allOpps = [...opps, ...programs];
+
   maybeNotifyNewOpps(allOpps);
   updateStats();
   buildFilters();

@@ -30,23 +30,28 @@
 <div class="panel-overlay" id="panel-overlay" onclick="closeSavedPanel()"></div>
 
 <!-- ── AUTH ─────────────────────────────────────────────────── -->
-<div id="auth-overlay">
+<div id="auth-overlay" style="display:none">
   <div class="auth-box">
     <div class="auth-logo">YOUTH<span>SCOUT</span></div>
     <p class="auth-tagline">Every opp in Singapore, personalized for you.</p>
+
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('login')">Log in</button>
-      <button class="auth-tab" onclick="switchAuthTab('signup')">Sign up</button>
+      <button class="auth-tab active" data-mode="login" type="button">Log in</button>
+      <button class="auth-tab" data-mode="signup" type="button">Sign up</button>
     </div>
-    <div class="auth-field">
-      <label>Email</label>
-      <input type="email" id="auth-email" placeholder="you@email.com" autocomplete="email">
-    </div>
-    <div class="auth-field">
-      <label>Password</label>
-      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="auth-btn" id="auth-submit-btn" onclick="handleAuth()">Log in</button>
+
+    <form id="auth-form">
+      <div class="auth-field">
+        <label for="auth-email">Email</label>
+        <input type="email" id="auth-email" placeholder="you@email.com" autocomplete="email" required>
+      </div>
+      <div class="auth-field">
+        <label for="auth-password">Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" required minlength="6">
+      </div>
+      <button class="auth-btn" id="auth-submit-btn" type="submit">Log in</button>
+    </form>
+
     <p class="auth-msg" id="auth-msg"></p>
   </div>
 </div>
@@ -85,7 +90,7 @@
 </div>
 
 <!-- ── MAIN APP ──────────────────────────────────────────────── -->
-<div id="main-app" style="display:none">
+<div id="main-app">
 
   <!-- PWA install banner -->
   <div id="install-banner">
@@ -206,7 +211,7 @@ html, body { height: 100%; }
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* ── PASSPORT STRIP (identity + actions, replaces top-nav/hero) ─────────── */
@@ -356,16 +361,16 @@ html, body { height: 100%; }
 .swipe-deck {
   position: relative;
   width: 100%;
-  max-width: 560px;
+  max-width: 640px;
   margin: 0 auto;
-  height: min(520px, 100%, 62vh);
+  height: min(700px, 100%, 80vh);
   flex-shrink: 1;
   flex-grow: 0;
   touch-action: none;
 }
 
 @media (max-width: 600px) {
-  .swipe-deck { height: min(480px, 100%, 58vh); }
+  .swipe-deck { height: min(620px, 100%, 72vh); }
 }
 
 /* ── SWIPE HINT ─────────────────────────────────────────────────────────── */
@@ -389,14 +394,14 @@ html, body { height: 100%; }
 .card {
   position: absolute;
   inset: 0;
-  background: #fff;
+  background: #f1e7db; /* darker beige for light mode */
   border-radius: 24px;
   box-shadow: 0 24px 48px rgba(0,0,0,0.12), 0 6px 20px rgba(0,0,0,0.08);
-  padding: 30px 28px 24px;
-  padding-right: 40px; /* room for the perforated stub edge */
+  padding: 34px 32px 28px;
+  padding-right: 46px; /* room for the perforated stub edge */
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: auto;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -499,7 +504,7 @@ html, body { height: 100%; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
@@ -532,32 +537,32 @@ html, body { height: 100%; }
 
 .card-title {
   font-family: 'Syne', sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 800;
-  line-height: 1.25;
-  margin-bottom: 10px;
+  line-height: 1.3;
+  margin-bottom: 12px;
   flex-shrink: 0;
   color: var(--text, #111);
 }
 
 .card-desc {
   font-family: 'DM Sans', sans-serif;
-  font-size: 0.88rem;
-  line-height: 1.55;
+  font-size: 0.94rem;
+  line-height: 1.65;
   opacity: 0.72;
   flex: 1;
   overflow: hidden;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 7;
   -webkit-box-orient: vertical;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .card-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 16px;
   flex-shrink: 0;
 }
 
@@ -581,7 +586,7 @@ html, body { height: 100%; }
   justify-content: space-between;
   gap: 10px;
   flex-shrink: 0;
-  padding-top: 14px;
+  padding-top: 16px;
   border-top: 1px solid rgba(0,0,0,0.08);
 }
 
@@ -766,9 +771,10 @@ html, body { height: 100%; }
 
 /* ── DARK MODE TWEAKS ────────────────────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
-  .card { background: #1a1a2e; border-color: rgba(255,255,255,0.08); }
-  .card-footer { border-top-color: rgba(255,255,255,0.08); }
-  .meta-chip { background: rgba(255,255,255,0.06); }
+  /* Use a darker beige variant in dark mode so cards remain warm */
+  .card { background: #e9dcc6; border-color: rgba(0,0,0,0.12); color: #111; }
+  .card-footer { border-top-color: rgba(0,0,0,0.08); }
+  .meta-chip { background: rgba(0,0,0,0.06); }
   .swipe-btn { background: #1a1a2e; }
 }
 </style>
@@ -849,6 +855,23 @@ let appInitialized = false;
 
 let obStep = 0;
 let obData = { name: '', school: '', interests: [], looking_for: [] };
+
+async function withTimeout(promise, ms, fallbackValue = null) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Request timed out')), ms);
+      }),
+    ]);
+  } catch (err) {
+    console.warn('[App]', err.message || err);
+    return fallbackValue;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // ── SWIPE STATE ────────────────────────────────────────────────────────────
 let swipeQueue   = [];   // ordered list of opps to swipe through
@@ -1195,80 +1218,111 @@ function exportSingleICS(opp) {
 }
 
 // ── AUTH ───────────────────────────────────────────────────────────────────
-let authMode = 'login';
+// ── AUTH MODULE ──────────────────────────────────────────────────────────
+const authForm      = document.getElementById('auth-form');
+const authEmailEl    = document.getElementById('auth-email');
+const authPasswordEl = document.getElementById('auth-password');
+const authSubmitBtn  = document.getElementById('auth-submit-btn');
+const authMsgEl      = document.getElementById('auth-msg');
+const authTabs       = document.querySelectorAll('.auth-tab');
+
+let authMode = 'login'; // 'login' | 'signup'
+
+function setAuthMessage(text, isSuccess = false) {
+  authMsgEl.textContent = text || '';
+  authMsgEl.classList.toggle('success', isSuccess);
+}
 
 function switchAuthTab(mode) {
   authMode = mode;
-  document.querySelectorAll('.auth-tab').forEach((t, i) =>
-    t.classList.toggle('active', (i === 0 && mode === 'login') || (i === 1 && mode === 'signup')));
-  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Log in' : 'Create account';
-  document.getElementById('auth-msg').textContent = '';
+  authTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
+  authSubmitBtn.textContent = mode === 'login' ? 'Log in' : 'Create account';
+  setAuthMessage('');
 }
 
-async function handleAuth() {
-  const email    = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value;
-  const btn      = document.getElementById('auth-submit-btn');
-  const msg      = document.getElementById('auth-msg');
-  if (!email || !password) { msg.textContent = 'Please fill in both fields.'; return; }
-  btn.disabled = true; msg.textContent = '';
+authTabs.forEach(tab => {
+  tab.addEventListener('click', () => switchAuthTab(tab.dataset.mode));
+});
 
-  const { data, error } = authMode === 'login'
-    ? await sb.auth.signInWithPassword({ email, password })
-    : await sb.auth.signUp({ email, password });
+authForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-  btn.disabled = false;
-  if (error) { msg.textContent = error.message; return; }
-  if (authMode === 'signup' && data.user && !data.session) {
-    msg.className = 'auth-msg success';
-    msg.textContent = 'Check your email to confirm your account!';
+  const email    = authEmailEl.value.trim();
+  const password = authPasswordEl.value;
+
+  if (!email || !password) {
+    setAuthMessage('Please fill in both fields.');
     return;
   }
-}
 
-// ── FIXED SIGN OUT ─────────────────────────────────────────────────────────
-let signingOut = false;
-async function signOut() {
-  if (signingOut) return; // ignore double-clicks / repeat taps while a sign-out is in flight
-  signingOut = true;
-  const btn = document.querySelector('.signout-btn');
-  if (btn) btn.disabled = true;
+  authSubmitBtn.disabled = true;
+  setAuthMessage('');
 
-  try {
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage('CLEAR_CACHE');
-    }
+  const authResult = await withTimeout(
+    authMode === 'login'
+      ? sb.auth.signInWithPassword({ email, password })
+      : sb.auth.signUp({ email, password }),
+    7000,
+    { data: { user: null, session: null }, error: { message: 'Login is taking too long. Check your connection and try again.' } }
+  );
 
-    await sb.auth.signOut();
-    // onAuthStateChange's SIGNED_OUT branch handles the DOM swap + state reset.
-    // We still clear these defensively in case the event is slow to fire.
-    document.getElementById('main-app').style.display = 'none';
-    document.getElementById('auth-overlay').style.display = 'flex';
-    document.getElementById('auth-email').value = '';
-    document.getElementById('auth-password').value = '';
-    document.getElementById('auth-msg').textContent = '';
-    switchAuthTab('login');
+  authSubmitBtn.disabled = false;
 
-    currentUser = null;
-    userProfile = null;
-    allOpps = [];
-    savedOpps = {};
-    appliedOpps = {};
-    appInitialized = false;
-    bootedSessionId = null;
-    authBusy = false;
+  const { data, error } = authResult || { data: null, error: null };
 
-    toast('Signed out successfully');
-  } catch (e) {
-    console.error('Sign out error:', e);
-    document.getElementById('main-app').style.display = 'none';
-    document.getElementById('auth-overlay').style.display = 'flex';
-  } finally {
-    signingOut = false;
-    if (btn) btn.disabled = false;
+  if (error) {
+    setAuthMessage(error.message);
+    return;
   }
+
+  // Signup with email confirmation enabled returns a user but no session yet.
+  if (authMode === 'signup' && data.user && !data.session) {
+    setAuthMessage('Check your email to confirm your account!', true);
+    authForm.reset();
+    return;
+  }
+
+  // Login (or signup-with-auto-session) succeeds silently here —
+  // onAuthStateChange picks up the new session and swaps the UI.
+});
+
+function showMainApp() {
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('auth-overlay').style.display = 'none';
 }
 
+function showAuthScreen() {
+  document.getElementById('main-app').style.display = 'block';
+  document.getElementById('auth-overlay').style.display = 'flex';
+  authForm.reset();
+  setAuthMessage('');
+  switchAuthTab('login');
+}
+
+async function signOut() {
+  const signoutBtn = document.querySelector('.signout-btn');
+  if (signoutBtn) signoutBtn.disabled = true;
+
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage('CLEAR_CACHE');
+  }
+
+  await withTimeout(sb.auth.signOut(), 1500, null);
+
+  // Always reset local state and keep the opportunities feed visible,
+  // even if the network call failed.
+  currentUser = null;
+  userProfile = null;
+  savedOpps = {};
+  appliedOpps = {};
+  showMainApp();
+  loadLocalLists();
+  updateSavedNavBtn();
+  await loadData();
+
+  if (signoutBtn) signoutBtn.disabled = false;
+  toast('Signed out successfully — you can still browse opportunities');
+}
 // ── ONBOARDING ─────────────────────────────────────────────────────────────
 function renderObStep() {
   const step    = OB_STEPS[obStep];
@@ -1334,6 +1388,7 @@ async function obNext() {
 function obBack() { obCollectStep(); if (obStep > 0) { obStep--; renderObStep(); } }
 
 function closeOnboarding() {
+  markOnboardingSeen();
   document.getElementById('onboarding-overlay').classList.remove('visible');
   renderPersonaBar(); renderCards();
 }
@@ -1814,45 +1869,58 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── AUTH STATE ─────────────────────────────────────────────────────────────
-let bootedSessionId = null;
-let authBusy = false; // guards against overlapping init/sign-out races
+
+// ── AUTH STATE ─────────────────────────────────────────────────────────
+let lastBootedUserId = null;
+let hasShownOnboardingThisSession = false;
+const ONBOARDING_SEEN_KEY = 'ys-onboarding-seen';
+
+function hasSeenOnboarding() {
+  return localStorage.getItem(ONBOARDING_SEEN_KEY) === '1';
+}
+
+function markOnboardingSeen() {
+  localStorage.setItem(ONBOARDING_SEEN_KEY, '1');
+}
 
 sb.auth.onAuthStateChange(async (event, session) => {
-  console.log('Auth:', event, session?.user?.email);
+  if (event === 'TOKEN_REFRESHED') {
+    if (session) currentUser = session.user;
+    return; // never re-run boot logic for a refresh
+  }
 
   if (event === 'SIGNED_OUT' || !session) {
-    bootedSessionId = null;
-    authBusy = false;
+    lastBootedUserId = null;
     currentUser = null;
     userProfile = null;
-    document.getElementById('main-app').style.display = 'none';
-    document.getElementById('auth-overlay').style.display = 'flex';
+    showMainApp();
+    loadLocalLists();
+    updateSavedNavBtn();
+    initNotifState();
+    await loadData();
     return;
   }
 
-  if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION' && event !== 'TOKEN_REFRESHED') return;
-  // Token refreshes fire repeatedly for an already-booted session — never re-run init for those.
-  if (event === 'TOKEN_REFRESHED') { currentUser = session.user; return; }
+  // SIGNED_IN or INITIAL_SESSION with a real session
+  if (lastBootedUserId === session.user.id) return; // already booted this user
+  lastBootedUserId = session.user.id;
 
-  const userId = session.user.id;
-  // Only skip re-init if we're already mid-init for this exact user (prevents double-fire,
-  // e.g. INITIAL_SESSION + SIGNED_IN back-to-back) — but always allow a fresh login to re-run.
-  if (bootedSessionId === userId && authBusy) return;
-  bootedSessionId = userId;
-  authBusy = true;
+  await bootApp(session);
+});
 
+async function bootApp(session) {
   currentUser = session.user;
-  document.getElementById('auth-overlay').style.display = 'none';
-  document.getElementById('main-app').style.display = 'block';
+  showMainApp();
 
-  const { data: profile, error } = await sb
-    .from('profiles')
-    .select('*')
-    .eq('id', currentUser.id)
-    .single();
+  const profileResult = await withTimeout(
+    sb.from('profiles').select('*').eq('id', currentUser.id).single(),
+    3000,
+    { data: null, error: { message: 'Profile request timed out' } }
+  );
 
-  if (error) console.error('Profile load error:', error);
+  const profile = profileResult?.data || null;
+  const error = profileResult?.error;
+  if (error) console.warn('Profile load warning:', error.message || error);
   userProfile = profile || null;
 
   document.getElementById('nav-user-info').innerHTML =
@@ -1862,7 +1930,8 @@ sb.auth.onAuthStateChange(async (event, session) => {
   updateSavedNavBtn();
   initNotifState();
 
-  if (!profile?.onboarded) {
+  if (!profile?.onboarded && !hasSeenOnboarding() && !hasShownOnboardingThisSession) {
+    hasShownOnboardingThisSession = true;
     obStep = 0;
     obData = {
       name: profile?.name || '',
@@ -1876,12 +1945,43 @@ sb.auth.onAuthStateChange(async (event, session) => {
     renderPersonaBar();
     await loadData();
   }
-});
-
+}
 document.getElementById('search').addEventListener('input', renderCards);
 
+showMainApp();
+loadLocalLists();
+updateSavedNavBtn();
+initNotifState();
+loadData();
+
+// Ensure swipe deck doesn't collapse (some layouts compute 100% of a 0-height parent).
+function fixDeckHeight() {
+  try {
+    const deck = document.querySelector('.swipe-deck');
+    if (!deck) return;
+    // Prefer a responsive height: 72% of viewport but clamped to sensible min/max
+    const vh = window.innerHeight || document.documentElement.clientHeight || 700;
+    const desired = Math.max(420, Math.min(760, Math.floor(vh * 0.72)));
+    deck.style.height = desired + 'px';
+  } catch (e) { console.warn('[App] fixDeckHeight failed', e); }
+}
+window.addEventListener('resize', fixDeckHeight);
+// run once now to avoid a collapsed deck on first paint
+fixDeckHeight();
+
+// force card background color to ensure system dark-mode or browser overrides don't hide the chosen beige
+function enforceCardColor(hex = '#e9dcc6', textColor = '#111') {
+  try {
+    document.querySelectorAll('.card').forEach(c => {
+      c.style.background = hex;
+      c.style.color = textColor;
+      c.style.overflow = c.style.overflow || 'auto';
+    });
+  } catch (e) { console.warn('[App] enforceCardColor failed', e); }
+}
+window.addEventListener('load', () => enforceCardColor());
+window.addEventListener('resize', () => enforceCardColor());
 window.switchAuthTab = switchAuthTab;
-window.handleAuth = handleAuth;
 window.signOut = signOut;
 window.toggleNotifications = toggleNotifications;
 window.installPWA = installPWA;

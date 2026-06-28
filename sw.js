@@ -4,7 +4,7 @@
 // FIXED: chrome-extension scheme check to prevent cache errors
 // FIXED: deprecated apple-mobile-web-app-capable warning
 
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME    = `youthscout-${CACHE_VERSION}`;
 
 

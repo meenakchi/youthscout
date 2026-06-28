@@ -21,9 +21,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
-</head>
 <link rel="stylesheet" href="index.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -88,22 +87,6 @@
 <!-- ── MAIN APP ──────────────────────────────────────────────── -->
 <div id="main-app" style="display:none">
 
-  <nav class="top-nav">
-    <span class="nav-logo">YOUTH<span>SCOUT</span></span>
-    <div class="nav-right">
-      <span class="nav-user" id="nav-user-info"></span>
-      <button class="saved-nav-btn" id="saved-nav-btn" onclick="openSavedPanel()">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        <span id="saved-nav-label">Saved</span>
-      </button>
-      <button class="notif-btn" id="notif-btn" onclick="toggleNotifications()" title="Notifications">
-        🕭
-        <span class="notif-badge" id="notif-badge"></span>
-      </button>
-      <button class="signout-btn" onclick="signOut()">Sign out</button>
-    </div>
-  </nav>
-
   <!-- PWA install banner -->
   <div id="install-banner">
     <span class="install-text"><strong>Add YouthScout to your home screen</strong> — get notified about new opps</span>
@@ -113,86 +96,64 @@
     </div>
   </div>
 
+  <!-- ── PASSPORT STRIP (replaces top-nav + hero) ─────────────── -->
+  <div class="passport-strip">
+    <div class="passport-id">
+      <span class="passport-chip">✦SG</span>
+      <div class="passport-id-text">
+        <span class="passport-logo">YOUTH<span>SCOUT</span></span>
+        <span class="passport-user" id="nav-user-info">Welcome</span>
+      </div>
+    </div>
+    <div class="passport-actions">
+      <button class="picon-btn" id="notif-btn" onclick="toggleNotifications()" title="Notifications">
+        🕭<span class="notif-badge" id="notif-badge"></span>
+      </button>
+      <button class="picon-btn saved-nav-btn" id="saved-nav-btn" onclick="openSavedPanel()" title="Saved & Applied">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <span id="saved-nav-label" class="picon-label">Stamps</span>
+      </button>
+      <button class="picon-btn" onclick="loadData()" title="Refresh opportunities">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </button>
+      <button class="picon-btn signout-btn" onclick="signOut()" title="Sign out">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+
   <div class="persona-bar" id="persona-bar" style="display:none">
     <div class="persona-tags" id="persona-tags"></div>
     <button class="edit-prefs-btn" onclick="reopenOnboarding()">Edit preferences</button>
   </div>
 
-  <div class="marquee-stripe">
-    <div class="marquee-track">
-      <span>HACKATHONS</span><span class="dot">✦</span>
-      <span>FELLOWSHIPS</span><span class="dot">✦</span>
-      <span>COMPETITIONS</span><span class="dot">✦</span>
-      <span>LEADERSHIP CAMPS</span><span class="dot">✦</span>
-      <span>INTERNSHIPS</span><span class="dot">✦</span>
-      <span>YOUTH PROGRAMS</span><span class="dot">✦</span>
-      <span>BOOTCAMPS</span><span class="dot">✦</span>
-      <span>APPLY NOW</span><span class="dot">✦</span>
-      <span>HACKATHONS</span><span class="dot">✦</span>
-      <span>FELLOWSHIPS</span><span class="dot">✦</span>
-      <span>COMPETITIONS</span><span class="dot">✦</span>
-      <span>LEADERSHIP CAMPS</span><span class="dot">✦</span>
-      <span>INTERNSHIPS</span><span class="dot">✦</span>
-      <span>YOUTH PROGRAMS</span><span class="dot">✦</span>
-      <span>BOOTCAMPS</span><span class="dot">✦</span>
-      <span>APPLY NOW</span><span class="dot">✦</span>
-    </div>
-  </div>
-
-  <header>
-    <div class="hero-blob"></div>
-    <div class="hero-blob-2"></div>
-    <svg class="star" style="width:58px;height:58px;top:28px;left:38px;" viewBox="0 0 60 60"><path d="M30 5 L33 27 L55 30 L33 33 L30 55 L27 33 L5 30 L27 27 Z" stroke-width="1.5"/></svg>
-    <svg class="star star-2" style="width:34px;height:34px;top:118px;left:136px;" viewBox="0 0 36 36"><path d="M18 3 L20 16 L33 18 L20 20 L18 33 L16 20 L3 18 L16 16 Z" stroke-width="1.5"/></svg>
-    <div class="hero-inner">
-      <div class="hero-text">
-        <div class="hero-tag"><span class="pulse"></span> Auto-updated twice a week</div>
-        <h1>YOUTH<br><span class="outline">SCOUT</span><br><span class="filled">SG</span></h1>
-        <p class="hero-sub">Every hackathon, fellowship, and youth programme in Singapore — scraped &amp; served fresh. Stop scrolling LinkedIn, start applying!!!</p>
-      </div>
-      <div class="hero-deco">
-        <div class="hero-badge">
-          <span class="badge-num" id="hero-count">—</span>
-          OPPS<br>LIVE
-        </div>
-      </div>
-    </div>
-    <div class="stats-strip">
-      <div class="stat-item"><span class="stat-num" id="total-count">—</span><span class="stat-label">Opportunities</span></div>
-      <div class="stat-item"><span class="stat-num" id="cat-count">—</span><span class="stat-label">Categories</span></div>
-      <div class="stat-item"><span class="stat-num" id="source-count">—</span><span class="stat-label">Sources</span></div>
-      <div class="stat-item"><span class="stat-num" id="last-updated">—</span><span class="stat-label">Last updated</span></div>
-    </div>
-  </header>
-
-  <div class="bridge"></div>
-
-  <div class="wrap">
-    <div class="controls-section">
-      <div class="controls-row">
-        <div class="search-wrap">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input type="search" id="search" placeholder="Search hackathons, fellowships…" autocomplete="off">
-        </div>
-        <button class="refresh-btn" onclick="loadData()">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          Refresh
-        </button>
-      </div>
-      <div class="pills-row" id="filter-pills"></div>
-    </div>
-
-    <div class="toolbar">
-      <div class="result-count" id="result-count"></div>
-      <select id="sort-select" onchange="renderCards()">
+  <!-- ── GATE BAR (replaces marquee + filter pills + search) ──── -->
+  <div class="gate-bar">
+    <div class="gate-row">
+      <button class="gate-search-toggle" id="gate-search-toggle" onclick="toggleGateSearch()" title="Search">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <div class="gate-pills" id="filter-pills"></div>
+      <select id="sort-select" class="gate-sort" onchange="renderCards()" title="Sort">
         <option value="relevance">Best match</option>
-        <option value="date">Newest first</option>
+        <option value="date">Newest</option>
         <option value="deadline">By deadline</option>
         <option value="title">A → Z</option>
       </select>
     </div>
+    <div class="gate-search-row" id="gate-search-row">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="search" placeholder="Search hackathons, fellowships…" autocomplete="off">
+      <span class="gate-result-count" id="result-count"></span>
+    </div>
+  </div>
 
-    <!-- ── SWIPE DECK ─────────────────────────────────────────── -->
+  <!-- ── STAGE: the swipe deck is the home screen ──────────────── -->
+  <div class="stage">
+    <div class="stage-ticker">
+      <span class="ticker-num" id="hero-count">—</span> opps live in SG · updated <span id="last-updated">—</span>
+    </div>
+
     <div class="swipe-hint" id="swipe-hint">
       <span class="hint-item hint-left">← Skip</span>
       <span class="hint-item hint-up">↑ Applied</span>
@@ -220,29 +181,191 @@
     <div class="swipe-progress" id="swipe-progress" style="display:none">
       <div class="swipe-progress-bar" id="swipe-progress-bar"></div>
     </div>
+
+    <div class="stage-credit">Data from Devpost, MLH, Eventbrite &amp; more · auto-updated twice a week</div>
   </div>
 
-  <footer>
-    <span class="footer-logo">YOUTH<span>SCOUT</span></span>
-    <span>Built with Python + scrapers · Runs on GitHub Actions</span>
-    <span>Data from <a href="https://devpost.com" target="_blank">Devpost</a>, MLH, Eventbrite &amp; more</span>
-  </footer>
+  <!-- hidden stat fields kept for updateStats() compatibility -->
+  <span id="total-count" style="display:none"></span>
+  <span id="cat-count" style="display:none"></span>
+  <span id="source-count" style="display:none"></span>
 
 </div>
 
 <style>
+
+/* ════════════════════════════════════════════════════════════════════════
+   APP SHELL — passport-strip / gate-bar / stage
+   Same palette & type as before (--pink, --lime, --blue, --cream, --dark);
+   only the structure changes from "scrolling website" to a fixed app shell.
+   ════════════════════════════════════════════════════════════════════════ */
+
+html, body { height: 100%; }
+#main-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* ── PASSPORT STRIP (identity + actions, replaces top-nav/hero) ─────────── */
+.passport-strip {
+  flex-shrink: 0;
+  background: var(--dark);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 3px solid var(--pink);
+  position: relative;
+}
+.passport-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.passport-chip {
+  flex-shrink: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--dark);
+  background: var(--lime);
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  transform: rotate(-4deg);
+}
+.passport-id-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.passport-logo { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 0.04em; color: #fff; line-height: 1; }
+.passport-logo span { color: var(--pink); }
+.passport-user { font-family: 'DM Sans', sans-serif; font-size: 12px; color: rgba(255,255,255,0.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.passport-user strong { color: var(--lime); font-weight: 600; }
+
+.passport-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.picon-btn {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid #2a2a2a;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+.picon-btn svg { width: 15px; height: 15px; }
+.picon-btn:hover { border-color: var(--lime); color: var(--lime); }
+.picon-btn.active { border-color: var(--lime); color: var(--lime); }
+.picon-btn.has-items { border-color: var(--saved-color); color: var(--saved-color); }
+.picon-btn.signout-btn:hover { border-color: var(--pink); color: var(--pink); }
+.picon-label { display: none; } /* label hidden on the round icon button; tooltip via title attr */
+.notif-badge { position: absolute; top: -3px; right: -3px; background: var(--pink); color: #fff; font-size: 9px; font-weight: 800; border-radius: 100px; padding: 1px 4px; min-width: 14px; text-align: center; display: none; }
+.notif-badge.show { display: block; }
+
+/* ── GATE BAR (boarding-gate style category tabs, replaces marquee+filters) */
+.gate-bar { flex-shrink: 0; background: #fff; border-bottom: 2px solid var(--dark); }
+.gate-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
+.gate-search-toggle {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+  border: 1.5px solid var(--border); background: transparent; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.12s;
+}
+.gate-search-toggle svg { width: 14px; height: 14px; }
+.gate-search-toggle:hover, .gate-search-toggle.active { border-color: var(--dark); color: var(--dark); }
+.gate-pills {
+  flex: 1; min-width: 0;
+  display: flex; gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.gate-pills::-webkit-scrollbar { display: none; }
+.gate-sort {
+  flex-shrink: 0; border: 1.5px solid var(--border); border-radius: 100px;
+  padding: 6px 10px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+  color: var(--dark); background: #fff; cursor: pointer; outline: none; max-width: 100px;
+}
+.gate-search-row {
+  display: flex; align-items: center; gap: 10px;
+  max-height: 0; overflow: hidden; opacity: 0;
+  padding: 0 14px;
+  transition: max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease;
+  border-top: 0px solid var(--border);
+}
+.gate-search-row.open { max-height: 52px; opacity: 1; padding: 8px 14px 12px; border-top-width: 1.5px; }
+.gate-search-row svg { width: 15px; height: 15px; color: var(--muted); flex-shrink: 0; }
+.gate-search-row input { flex: 1; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--dark); background: transparent; }
+.gate-search-row input::placeholder { color: #b0a89a; }
+.gate-result-count { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--muted); letter-spacing: 0.03em; flex-shrink: 0; white-space: nowrap; }
+
+/* re-skin filter pills (gate "call signs") to fit the slim bar */
+.gate-pills .pill {
+  flex-shrink: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  padding: 6px 14px;
+}
+
+/* ── STAGE: full remaining height, swipe deck is the home screen ────────── */
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--cream);
+  background-image:
+    radial-gradient(circle at 8% 12%, rgba(255,45,120,0.07) 0%, transparent 38%),
+    radial-gradient(circle at 92% 88%, rgba(200,245,66,0.10) 0%, transparent 42%);
+  position: relative;
+  overflow: hidden;
+}
+.stage-ticker {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.stage-ticker .ticker-num { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--pink); letter-spacing: 0; text-transform: none; }
+.stage-credit {
+  flex-shrink: 0;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10.5px;
+  color: var(--muted);
+  opacity: 0.55;
+  text-align: center;
+  max-width: 420px;
+}
+
+@media (max-width: 600px) {
+  .passport-strip { padding: 12px 14px; }
+  .passport-logo { font-size: 15px; }
+  .stage { padding: 10px 12px; gap: 8px; }
+  .stage-credit { display: none; }
+}
+
 /* ── SWIPE DECK LAYOUT ──────────────────────────────────────────────────── */
 .swipe-deck {
   position: relative;
   width: 100%;
   max-width: 560px;
   margin: 0 auto;
-  height: 520px;
+  height: min(520px, 100%, 62vh);
+  flex-shrink: 1;
+  flex-grow: 0;
   touch-action: none;
 }
 
 @media (max-width: 600px) {
-  .swipe-deck { height: 480px; }
+  .swipe-deck { height: min(480px, 100%, 58vh); }
 }
 
 /* ── SWIPE HINT ─────────────────────────────────────────────────────────── */
@@ -270,6 +393,7 @@
   border-radius: 24px;
   box-shadow: 0 24px 48px rgba(0,0,0,0.12), 0 6px 20px rgba(0,0,0,0.08);
   padding: 30px 28px 24px;
+  padding-right: 40px; /* room for the perforated stub edge */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -280,6 +404,26 @@
   transform-origin: center bottom;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   border: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Signature device: a boarding-pass / passport-stub perforated edge */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 18px; bottom: 0;
+  width: 0;
+  border-right: 2px dashed rgba(0,0,0,0.13);
+  pointer-events: none;
+}
+.card[data-depth="0"]::after {
+  content: '✦';
+  position: absolute;
+  top: 50%; right: 5px;
+  transform: translateY(-50%) rotate(90deg);
+  font-size: 11px;
+  color: rgba(0,0,0,0.16);
+  letter-spacing: 6px;
+  pointer-events: none;
 }
 
 .card:hover { box-shadow: 0 26px 58px rgba(0,0,0,0.14), 0 8px 26px rgba(0,0,0,0.1); }
@@ -348,7 +492,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 4px;
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px 24px 0 0;
 }
 
 .card-top {
@@ -473,21 +617,23 @@
 .apply-link:hover { background: #ff2d78; color: #fff; }
 .apply-link svg { width: 13px; height: 13px; }
 
-/* Status badges on card */
+/* Status badges on card — styled like an ink stamp */
 .status-badge {
   position: absolute;
   top: 14px;
-  right: 14px;
+  right: 26px;
   font-family: 'Syne', sans-serif;
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   padding: 3px 9px;
-  border-radius: 20px;
+  border-radius: 4px;
+  border: 1.5px solid currentColor;
+  transform: rotate(-6deg);
   z-index: 5;
 }
-.status-badge.saved   { background: rgba(255,45,120,0.12); color: #ff2d78; }
-.status-badge.applied { background: rgba(0,200,150,0.12);  color: #00c896; }
+.status-badge.saved   { background: rgba(255,45,120,0.08); color: #ff2d78; }
+.status-badge.applied { background: rgba(0,200,150,0.08);  color: #00c896; }
 
 /* ── SWIPE ACTION BUTTONS ───────────────────────────────────────────────── */
 .swipe-actions {
@@ -723,6 +869,14 @@ const SAMPLE_DATA = [
   { id:'s8', title:'Hack For Good 2026', source:'Devpost', url:'https://devpost.com', description:'48-hour hackathon focused on building tech solutions for social good.', deadline:'July 2026', eligibility:'Open to all, teams of up to 4', category:'Hackathon', location:'Singapore', date_found:'2026-06-01T00:00:00' },
   { id:'s9', title:'AI Singapore AIAP', source:'AI Singapore', url:'https://aisingapore.org/research/aiap/', description:'9-month applied AI programme. Build production-grade ML models with mentorship from senior AI engineers.', deadline:'Rolling intake', eligibility:'Fresh grads / career switchers with coding background', category:'Bootcamp', location:'Singapore', date_found:'2026-06-01T00:00:00' },
 ];
+
+// ── GATE SEARCH TOGGLE ──────────────────────────────────────────────────────
+function toggleGateSearch() {
+  const row = document.getElementById('gate-search-row');
+  const open = row.classList.toggle('open');
+  document.getElementById('gate-search-toggle').classList.toggle('active', open);
+  if (open) document.getElementById('search').focus();
+}
 
 // ── TOAST ──────────────────────────────────────────────────────────────────
 function toast(msg, type = '') {
@@ -1073,12 +1227,21 @@ async function handleAuth() {
 }
 
 // ── FIXED SIGN OUT ─────────────────────────────────────────────────────────
+let signingOut = false;
 async function signOut() {
+  if (signingOut) return; // ignore double-clicks / repeat taps while a sign-out is in flight
+  signingOut = true;
+  const btn = document.querySelector('.signout-btn');
+  if (btn) btn.disabled = true;
+
   try {
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage('CLEAR_CACHE');
     }
 
+    await sb.auth.signOut();
+    // onAuthStateChange's SIGNED_OUT branch handles the DOM swap + state reset.
+    // We still clear these defensively in case the event is slow to fire.
     document.getElementById('main-app').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
     document.getElementById('auth-email').value = '';
@@ -1092,13 +1255,17 @@ async function signOut() {
     savedOpps = {};
     appliedOpps = {};
     appInitialized = false;
+    bootedSessionId = null;
+    authBusy = false;
 
-    await sb.auth.signOut();
     toast('Signed out successfully');
   } catch (e) {
     console.error('Sign out error:', e);
     document.getElementById('main-app').style.display = 'none';
     document.getElementById('auth-overlay').style.display = 'flex';
+  } finally {
+    signingOut = false;
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -1224,11 +1391,14 @@ function isJunk(opp) {
 // ── LOAD DATA ──────────────────────────────────────────────────────────────
 async function loadData() {
   document.getElementById('grid').innerHTML =
-    '<div class="loading"><div class="spinner"></div> Loading…</div>';
+    '<div class="loading"><div class="spinner"></div> Loading opportunities…</div>';
   document.getElementById('swipe-actions').style.display = 'none';
   document.getElementById('swipe-progress').style.display = 'none';
   try {
-    const resp = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // never hang forever
+    const resp = await fetch(DATA_URL + '?t=' + Date.now(), { cache: 'no-store', signal: controller.signal });
+    clearTimeout(timeoutId);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const raw = await resp.json();
     if (!Array.isArray(raw) || !raw.length) throw new Error('Empty data');
@@ -1646,12 +1816,14 @@ function escHtml(s) {
 
 // ── AUTH STATE ─────────────────────────────────────────────────────────────
 let bootedSessionId = null;
+let authBusy = false; // guards against overlapping init/sign-out races
 
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('Auth:', event, session?.user?.email);
 
-  if (event === 'SIGNEDOUT' || !session) {
+  if (event === 'SIGNED_OUT' || !session) {
     bootedSessionId = null;
+    authBusy = false;
     currentUser = null;
     userProfile = null;
     document.getElementById('main-app').style.display = 'none';
@@ -1659,11 +1831,16 @@ sb.auth.onAuthStateChange(async (event, session) => {
     return;
   }
 
-  if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') return;
+  if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION' && event !== 'TOKEN_REFRESHED') return;
+  // Token refreshes fire repeatedly for an already-booted session — never re-run init for those.
+  if (event === 'TOKEN_REFRESHED') { currentUser = session.user; return; }
 
   const userId = session.user.id;
-  if (bootedSessionId === userId) return;
+  // Only skip re-init if we're already mid-init for this exact user (prevents double-fire,
+  // e.g. INITIAL_SESSION + SIGNED_IN back-to-back) — but always allow a fresh login to re-run.
+  if (bootedSessionId === userId && authBusy) return;
   bootedSessionId = userId;
+  authBusy = true;
 
   currentUser = session.user;
   document.getElementById('auth-overlay').style.display = 'none';
@@ -1720,6 +1897,7 @@ window.obBack = obBack;
 window.closeOnboarding = closeOnboarding;
 window.swipeCard = swipeCard;
 window.restartSwipe = restartSwipe;
+window.toggleGateSearch = toggleGateSearch;
 </script>
 </body>
 </html>
